@@ -1,0 +1,251 @@
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar bg-dark text-white">
+        <div class="sidebar-header p-4">
+            <h4 class="mb-0"><i class="bi bi-briefcase-fill me-2"></i>Recruitify</h4>
+            <p class="text-muted small mb-0">Recruiter Portal</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-file-earmark-plus"></i>
+                <span>Post Vacancy</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-list-ul"></i>
+                <span>My Vacancies</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-people"></i>
+                <span>Applicants</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-calendar-check"></i>
+                <span>Interviews</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-bar-chart"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-building"></i>
+                <span>Company Profile</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <img src="https://i.pravatar.cc/150?img=33" alt="User" class="rounded-circle me-2"
+                    style="width: 40px; height: 40px;">
+                <div class="flex-grow-1">
+                    <p class="mb-0 small fw-bold">John Recruiter</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">HR Manager</p>
+                </div>
+                <i class="bi bi-box-arrow-right cursor-pointer"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar bg-white border-bottom p-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">Dashboard</h3>
+                    <p class="text-muted small mb-0">Welcome back! Here's what's happening with your recruitment.</p>
+                </div>
+                <button class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Post New Vacancy
+                </button>
+            </div>
+        </div>
+
+        <div class="content-wrapper p-4">
+            <!-- Statistics Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p class="text-muted small mb-1">Total Vacancies</p>
+                                    <h2 class="mb-0 fw-bold">{{ stats.totalVacancies }}</h2>
+                                    <p class="text-success small mb-0 mt-2">
+                                        <i class="bi bi-arrow-up"></i> 12% from last month
+                                    </p>
+                                </div>
+                                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                                    <i class="bi bi-briefcase"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="stat-card card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p class="text-muted small mb-1">Active Applications</p>
+                                    <h2 class="mb-0 fw-bold">{{ stats.activeApplications }}</h2>
+                                    <p class="text-success small mb-0 mt-2">
+                                        <i class="bi bi-arrow-up"></i> 8% from last month
+                                    </p>
+                                </div>
+                                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="stat-card card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p class="text-muted small mb-1">Interviews Scheduled</p>
+                                    <h2 class="mb-0 fw-bold">{{ stats.interviewsScheduled }}</h2>
+                                    <p class="text-warning small mb-0 mt-2">
+                                        <i class="bi bi-dash"></i> No change
+                                    </p>
+                                </div>
+                                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                                    <i class="bi bi-calendar-event"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="stat-card card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <p class="text-muted small mb-1">Hired This Month</p>
+                                    <h2 class="mb-0 fw-bold">{{ stats.hiredThisMonth }}</h2>
+                                    <p class="text-success small mb-0 mt-2">
+                                        <i class="bi bi-arrow-up"></i> 50% from last month
+                                    </p>
+                                </div>
+                                <div class="stat-icon bg-info bg-opacity-10 text-info">
+                                    <i class="bi bi-person-check"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Vacancies and Applications -->
+            <div class="row g-4">
+                <!-- Recent Vacancies -->
+                <div class="col-lg-7">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Recent Vacancies</h5>
+                                <a href="#" class="text-primary small">View All</a>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Position</th>
+                                            <th>Department</th>
+                                            <th>Applicants</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let vacancy of recentVacancies">
+                                            <td>
+                                                <div>
+                                                    <p class="mb-0 fw-bold">{{ vacancy.title }}</p>
+                                                    <small class="text-muted">{{ vacancy.location }} • {{ vacancy.type
+                                                        }}</small>
+                                                </div>
+                                            </td>
+                                            <td>{{ vacancy.department }}</td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">{{ vacancy.applicants }}
+                                                    applicants</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge" [ngClass]="getStatusClass(vacancy.status)">
+                                                    {{ getStatusText(vacancy.status) }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Applications -->
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Recent Applications</h5>
+                                <a href="#" class="text-primary small">View All</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="application-item" *ngFor="let applicant of recentApplications">
+                                <div class="d-flex align-items-center mb-3">
+                                    <img [src]="applicant.avatar" alt="{{ applicant.name }}" class="rounded-circle me-3"
+                                        style="width: 45px; height: 45px;">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-0 fw-bold">{{ applicant.name }}</p>
+                                        <small class="text-muted">{{ applicant.position }}</small>
+                                    </div>
+                                    <span class="badge" [ngClass]="getStatusClass(applicant.status)">
+                                        {{ getStatusText(applicant.status) }}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center ps-5">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock me-1"></i>{{ applicant.appliedDate }}
+                                    </small>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary me-1">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <hr class="my-3"
+                                    *ngIf="applicant !== recentApplications[recentApplications.length - 1]">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
