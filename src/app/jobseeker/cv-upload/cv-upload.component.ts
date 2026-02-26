@@ -14,6 +14,7 @@ export class CvUploadComponent {
     selectedFile: File | null = null;
     profile: CandidateProfileDto | null = null;
     isLoading = false;
+    isSuccess = false;
     error: string | null = null;
     @Output() onUploadSuccess = new EventEmitter<CandidateProfileDto>();
 
@@ -25,6 +26,7 @@ export class CvUploadComponent {
             this.selectedFile = input.files[0];
             this.profile = null;
             this.error = null;
+            this.isSuccess = false;
         }
     }
 
@@ -38,6 +40,7 @@ export class CvUploadComponent {
             next: (profile) => {
                 this.profile = profile;
                 this.isLoading = false;
+                this.isSuccess = true;
                 // Save extracted profile to sessionStorage to be used in the profile page
                 sessionStorage.setItem('extractedProfile', JSON.stringify(profile));
                 this.onUploadSuccess.emit(profile);
@@ -54,5 +57,6 @@ export class CvUploadComponent {
         this.selectedFile = null;
         this.profile = null;
         this.error = null;
+        this.isSuccess = false;
     }
 }
