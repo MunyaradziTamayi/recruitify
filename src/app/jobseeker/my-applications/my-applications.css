@@ -1,0 +1,130 @@
+.my-applications {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: #212529 !important;
+}
+
+.main-wrapper {
+    flex: 1;
+    background-color: #f8f9fa;
+}
+
+.header-section {
+    padding-top: 20px;
+}
+
+/* Stats Cards */
+.stat-card {
+    border-radius: 16px;
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Table Design */
+.table-responsive {
+    border-radius: 12px;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.table tr {
+    transition: background-color 0.2s;
+}
+
+.table tr:hover {
+    background-color: #f8f9fa !important;
+}
+
+.company-logo {
+    border: 1px solid #eee;
+}
+
+/* Status Badges */
+.badge {
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-interview {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+.status-rejected {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.status-offered {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+/* Buttons */
+.btn-outline-secondary {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #212529;
+    border-color: #212529;
+    color: white;
+}
+
+.btn-primary {
+    background: #212529;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 10px;
+}
+
+.btn-primary:hover {
+    background: #343a40;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card,
+.stat-card {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .table-responsive {
+        border: none;
+    }
+}

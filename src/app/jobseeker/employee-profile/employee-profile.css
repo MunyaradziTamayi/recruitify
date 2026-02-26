@@ -1,0 +1,126 @@
+.employee-profile {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: #212529 !important;
+}
+
+.main-wrapper {
+    flex: 1;
+    background-color: #f8f9fa;
+}
+
+/* Sidebar Styling */
+.card {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.icon-box {
+    width: 40px;
+    height: 40px;
+    background-color: #f1f4f9;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #212529;
+    font-size: 1.2rem;
+}
+
+.strength-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f1f4f9 100%);
+}
+
+/* Timeline/Experience Styling */
+.timeline-box {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20px;
+}
+
+.timeline-dot {
+    width: 12px;
+    height: 12px;
+    background-color: #212529;
+    border-radius: 50%;
+    z-index: 1;
+    margin-top: 6px;
+}
+
+.timeline-line {
+    position: absolute;
+    top: 18px;
+    bottom: -40px;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+/* Badges & Buttons */
+.skill-badge {
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.skill-badge:hover {
+    background-color: #212529 !important;
+    color: white !important;
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background: #212529;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background: #343a40;
+}
+
+.btn-outline-secondary {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.progress {
+    border-radius: 20px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 20px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Responsive fixes */
+@media (max-width: 991px) {
+    .timeline-line {
+        bottom: -30px;
+    }
+}

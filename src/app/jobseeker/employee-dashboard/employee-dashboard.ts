@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { CvUploadComponent } from '../cv-upload/cv-upload.component';
 
 interface Job {
@@ -18,6 +19,7 @@ interface Job {
 
 interface UserProfile {
   name: string;
+  email: string;
   role: string;
   location: string;
   imageUrl: string;
@@ -26,17 +28,36 @@ interface UserProfile {
 @Component({
   selector: 'app-employee-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, CvUploadComponent],
+  imports: [CommonModule, FormsModule, CvUploadComponent, RouterLink, RouterLinkActive],
   templateUrl: './employee-dashboard.html',
   styleUrl: './employee-dashboard.css',
 })
-export class EmployeeDashboard {
+export class EmployeeDashboard implements OnInit {
   user: UserProfile = {
-    name: 'Anna Wilson',
-    role: 'UX/UI Designer',
-    location: 'Atlanta, GA',
-    imageUrl: 'https://i.pravatar.cc/150?img=1' // Placeholder
+    name: '',
+    email: '',
+    role: 'Job Seeker',
+    location: '',
+    imageUrl: ''
   };
+
+  constructor(private router: Router) { }
+
+  ngOnInit(): void {
+    const storedUser = sessionStorage.getItem('loggedInUser');
+    if (storedUser) {
+      const googleUser = JSON.parse(storedUser);
+      this.user = {
+        name: googleUser.name || 'User',
+        email: googleUser.email || '',
+        role: 'Job Seeker',
+        location: googleUser.locale || '',
+        imageUrl: googleUser.picture || 'https://i.pravatar.cc/150?img=1'
+      };
+    } else {
+      this.router.navigate(['employee-login']);
+    }
+  }
 
   filters = {
     experienceLevel: [
@@ -108,5 +129,10 @@ export class EmployeeDashboard {
 
   get savedJobsCount(): number {
     return this.jobs.filter(job => job.isSaved).length;
+  }
+
+  logout(): void {
+    sessionStorage.removeItem('loggedInUser');
+    this.router.navigate(['employee-login']);
   }
 }

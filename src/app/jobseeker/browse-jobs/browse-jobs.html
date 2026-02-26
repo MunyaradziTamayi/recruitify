@@ -1,1 +1,176 @@
-<p>browse-jobs works!</p>
+<div class="browse-jobs">
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold" routerLink="/employee-dashboard">
+                <i class="bi bi-briefcase-fill me-2"></i>Recruitify
+            </a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/employee-dashboard" routerLinkActive="active"><i
+                                class="bi bi-house-door me-1"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/browse-jobs" routerLinkActive="active"><i
+                                class="bi bi-search me-1"></i>Browse Jobs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/my-applications" routerLinkActive="active"><i
+                                class="bi bi-file-earmark-text me-1"></i>My Applications</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="dropdown">
+                        <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#"
+                            data-bs-toggle="dropdown">
+                            <img [src]="user.imageUrl" alt="Profile" class="rounded-circle me-2"
+                                style="width: 35px; height: 35px; object-fit: cover;">
+                            <span class="d-none d-md-block">{{ user.name }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li class="px-3 py-2 text-center border-bottom">
+                                <img [src]="user.imageUrl" alt="Profile" class="rounded-circle mb-2"
+                                    style="width: 50px; height: 50px; object-fit: cover;">
+                                <p class="mb-0 fw-bold small">{{ user.name }}</p>
+                                <p class="mb-0 text-muted" style="font-size: 0.75rem;">{{ user.email }}</p>
+                            </li>
+                            <li><a class="dropdown-item" routerLink="/employee-profile"><i
+                                        class="bi bi-person me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" (click)="logout()" style="cursor: pointer;"><i
+                                        class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-wrapper bg-light">
+        <div class="container-fluid p-4">
+
+            <div class="search-header mb-5 text-center">
+                <h2 class="fw-bold mb-3">Find Your Next Career Move</h2>
+                <p class="text-muted">Browse through thousands of high-quality jobs tailored for you</p>
+
+                <div class="search-box-container mx-auto mt-5 col-lg-8">
+                    <div class="card border-0 shadow-lg p-3 search-card">
+                        <div class="row g-2">
+                            <div class="col-md-9">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i
+                                            class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control border-start-0 py-3"
+                                        [(ngModel)]="searchQuery" (ngModelChange)="filterJobs()"
+                                        placeholder="Job title, keywords, or company...">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-primary w-100 h-100 fw-bold">Search Jobs</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="row">
+                <!-- Sidebar Filters -->
+                <div class="col-lg-3">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">Categories</h6>
+                            <div class="d-flex flex-column gap-2">
+                                <button *ngFor="let cat of categories" (click)="selectedCategory = cat; filterJobs()"
+                                    class="btn btn-sm text-start py-2 filter-btn"
+                                    [class.active-filter]="selectedCategory === cat">
+                                    {{ cat }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job List -->
+                <div class="col-lg-9">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">{{ filteredJobs.length }} Jobs Found</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-white border btn-sm dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown">
+                                Sort by: Newest
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Newest</a></li>
+                                <li><a class="dropdown-item" href="#">Popular</a></li>
+                                <li><a class="dropdown-item" href="#">Salary (High to Low)</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-12" *ngFor="let job of filteredJobs">
+                            <div class="card border-0 shadow-sm job-card h-100">
+                                <div class="card-body p-4">
+                                    <div class="d-flex flex-column flex-md-row gap-4">
+                                        <div class="company-logo bg-light rounded d-flex align-items-center justify-content-center p-2"
+                                            style="width: 80px; height: 80px; min-width: 80px;">
+                                            <img [src]="job.logo" [alt]="job.company" class="img-fluid">
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <h5 class="job-title mb-1">{{ job.title }}</h5>
+                                                    <p class="company-name text-primary fw-bold mb-0">{{ job.company }}
+                                                    </p>
+                                                </div>
+                                                <button class="btn btn-link p-0 text-decoration-none"
+                                                    (click)="toggleSave(job)">
+                                                    <i class="bi fs-4" [class.bi-heart-fill]="job.isSaved"
+                                                        [class.bi-heart]="!job.isSaved"
+                                                        [class.text-danger]="job.isSaved"></i>
+                                                </button>
+                                            </div>
+
+                                            <div class="d-flex flex-wrap gap-3 mb-3 text-muted small">
+                                                <span><i class="bi bi-geo-alt me-1"></i>{{ job.location }}</span>
+                                                <span><i class="bi bi-clock me-1"></i>{{ job.timePosted }}</span>
+                                                <span><i class="bi bi-briefcase me-1"></i>{{ job.type }}</span>
+                                                <span class="text-success fw-bold"><i
+                                                        class="bi bi-currency-dollar me-1"></i>{{ job.salary }}</span>
+                                            </div>
+
+                                            <p class="text-muted small line-clamp">{{ job.description }}</p>
+
+                                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                                <div class="d-flex gap-2">
+                                                    <span *ngFor="let tag of job.tags"
+                                                        class="badge bg-light text-dark border">{{ tag }}</span>
+                                                </div>
+                                                <button class="btn btn-outline-primary px-4 btn-sm">View
+                                                    Details</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div *ngIf="filteredJobs.length === 0" class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="bi bi-search" style="font-size: 4rem; color: #dee2e6;"></i>
+                        </div>
+                        <h4 class="fw-bold">No jobs found</h4>
+                        <p class="text-muted">Try adjusting your search or filters to find what you're looking for.</p>
+                        <button class="btn btn-primary mt-3"
+                            (click)="searchQuery = ''; selectedCategory = 'All'; filterJobs()">Clear All
+                            Filters</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
