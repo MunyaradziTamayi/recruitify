@@ -68,7 +68,8 @@
                                     user.location }}</span>
                             </div>
                             <button class="btn btn-primary w-100 mb-2">Edit Profile</button>
-                            <button class="btn btn-outline-secondary w-100">Upload Resume</button>
+                            <button class="btn btn-outline-secondary w-100" data-bs-toggle="modal"
+                                data-bs-target="#uploadCvModal">Upload Resume</button>
                         </div>
                     </div>
 
@@ -182,3 +183,5 @@
         </div>
     </div>
 </div>
+
+<app-cv-upload (onUploadSuccess)="refreshProfile()"></app-cv-upload>

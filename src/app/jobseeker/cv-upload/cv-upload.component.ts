@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CvExtractionService } from '../../services/cv-extraction.service';
 import { CandidateProfileDto } from '../../models/candidate-profile.model';
@@ -15,6 +15,7 @@ export class CvUploadComponent {
     profile: CandidateProfileDto | null = null;
     isLoading = false;
     error: string | null = null;
+    @Output() onUploadSuccess = new EventEmitter<CandidateProfileDto>();
 
     constructor(private cvService: CvExtractionService) { }
 
@@ -37,6 +38,9 @@ export class CvUploadComponent {
             next: (profile) => {
                 this.profile = profile;
                 this.isLoading = false;
+                // Save extracted profile to sessionStorage to be used in the profile page
+                sessionStorage.setItem('extractedProfile', JSON.stringify(profile));
+                this.onUploadSuccess.emit(profile);
             },
             error: (err) => {
                 this.error = 'Failed to extract CV. Please try again.';

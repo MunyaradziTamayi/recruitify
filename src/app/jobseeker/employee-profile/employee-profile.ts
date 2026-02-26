@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { CvUploadComponent } from '../cv-upload/cv-upload.component';
 
 interface Experience {
   company: string;
@@ -31,7 +32,7 @@ interface UserProfile {
 @Component({
   selector: 'app-employee-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, CvUploadComponent],
   templateUrl: './employee-profile.html',
   styleUrl: './employee-profile.css',
 })
@@ -79,10 +80,61 @@ export class EmployeeProfile implements OnInit {
       this.user.name = googleUser.name || 'User';
       this.user.email = googleUser.email || '';
       this.user.imageUrl = googleUser.picture || 'https://i.pravatar.cc/150?img=1';
+
+      this.loadExtractedProfile();
       this.calculateProfileStrength();
     } else {
       this.router.navigate(['employee-login']);
     }
+  }
+
+  loadExtractedProfile() {
+    const extractedData = sessionStorage.getItem('extractedProfile');
+    if (extractedData) {
+      const profile = JSON.parse(extractedData);
+
+      // Update phone and location if present
+      if (profile.phone) this.user.phone = profile.phone;
+      if (profile.address) this.user.location = profile.address;
+
+      // Update bio if objectives are present
+      if (profile.objectives) this.user.bio = profile.objectives;
+
+      // Update skills
+      if (profile.skills && profile.skills.length > 0) {
+        this.user.skills = profile.skills.map((s: string) => s.toUpperCase());
+      }
+
+      // Update experience
+      if (profile.experiences && profile.experiences.length > 0) {
+        this.user.experience = profile.experiences.map((exp: any) => ({
+          company: exp.company,
+          role: exp.jobTitle,
+          duration: `${exp.startDate} - ${exp.endDate || 'Present'}`,
+          description: exp.description
+        }));
+
+        // Update current role based on latest experience
+        if (this.user.experience.length > 0) {
+          this.user.role = this.user.experience[0].role;
+        }
+      }
+
+      // Update education
+      if (profile.educations && profile.educations.length > 0) {
+        this.user.education = profile.educations.map((edu: any) => ({
+          school: edu.institution,
+          degree: edu.degree,
+          year: edu.graduationYear
+        }));
+      }
+    }
+  }
+
+  // Method to be called after CV upload modal closes or via event
+  refreshProfile() {
+    this.loadExtractedProfile();
+    this.calculateProfileStrength();
   }
 
   calculateProfileStrength() {
