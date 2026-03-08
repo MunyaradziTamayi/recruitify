@@ -1,1 +1,162 @@
-<p>my-vacancies works!</p>
+<div class="my-vacancies-container">
+    <!-- Sidebar -->
+    <aside class="sidebar bg-dark text-white">
+        <div class="sidebar-header p-4">
+            <h4 class="mb-0"><i class="bi bi-briefcase-fill me-2"></i>Recruitify</h4>
+            <p class="text-muted small mb-0">Recruiter Portal</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a routerLink="/employer-dashboard" class="nav-item">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a routerLink="/post-vacancy" class="nav-item">
+                <i class="bi bi-file-earmark-plus"></i>
+                <span>Post Vacancy</span>
+            </a>
+            <a routerLink="/my-vacancies" class="nav-item active">
+                <i class="bi bi-list-ul"></i>
+                <span>My Vacancies</span>
+            </a>
+            <a routerLink="/applicants" class="nav-item">
+                <i class="bi bi-people"></i>
+                <span>Applicants</span>
+            </a>
+            <a routerLink="/interviews" class="nav-item">
+                <i class="bi bi-calendar-check"></i>
+                <span>Interviews</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-bar-chart"></i>
+                <span>Analytics</span>
+            </a>
+            <a routerLink="/company-profile" class="nav-item">
+                <i class="bi bi-building"></i>
+                <span>Company Profile</span>
+            </a>
+            <a routerLink="/settings" class="nav-item">
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <img src="https://i.pravatar.cc/150?img=33" alt="User" class="rounded-circle me-2"
+                    style="width: 40px; height: 40px;">
+                <div class="flex-grow-1">
+                    <p class="mb-0 small fw-bold">John Recruiter</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">HR Manager</p>
+                </div>
+                <i class="bi bi-box-arrow-right cursor-pointer"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar bg-white border-bottom p-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">My Vacancies</h3>
+                    <p class="text-muted small mb-0">Manage and track your active and past job postings.</p>
+                </div>
+                <button class="btn btn-primary" routerLink="/post-vacancy">
+                    <i class="bi bi-plus-circle me-2"></i>Post New Vacancy
+                </button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="card vacancies-card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom p-4">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="mb-0">All Vacancies</h5>
+                        </div>
+                        <div class="col-auto">
+                            <div class="input-group input-group-sm" style="width: 250px;">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control bg-light border-start-0"
+                                    placeholder="Search vacancies...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Vacancy Details</th>
+                                    <th>Department</th>
+                                    <th>Applicants</th>
+                                    <th>Date Posted</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let vacancy of vacancies">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                                style="width: 40px; height: 40px;">
+                                                <i class="bi bi-briefcase-fill"></i>
+                                            </div>
+                                            <div>
+                                                <p class="mb-0 fw-bold">{{ vacancy.title }}</p>
+                                                <small class="text-muted">{{ vacancy.location }} • {{ vacancy.type
+                                                    }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ vacancy.department }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-light text-dark border me-2">{{ vacancy.applicants
+                                                }}</span>
+                                            <small class="text-muted">Applied</small>
+                                        </div>
+                                    </td>
+                                    <td>{{ vacancy.postedDate }}</td>
+                                    <td>
+                                        <span class="badge" [ngClass]="getStatusClass(vacancy.status)">
+                                            {{ getStatusText(vacancy.status) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button class="btn btn-action btn-outline-primary" title="View Applicants"
+                                                routerLink="/applicants">
+                                                <i class="bi bi-people"></i>
+                                            </button>
+                                            <button class="btn btn-action btn-outline-info" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-action btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top p-3 text-center">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

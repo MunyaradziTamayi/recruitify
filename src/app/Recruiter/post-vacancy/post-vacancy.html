@@ -1,1 +1,170 @@
-<p>post-vacancy works!</p>
+<div class="post-vacancy-container">
+    <!-- Sidebar -->
+    <aside class="sidebar bg-dark text-white">
+        <div class="sidebar-header p-4">
+            <h4 class="mb-0"><i class="bi bi-briefcase-fill me-2"></i>Recruitify</h4>
+            <p class="text-muted small mb-0">Recruiter Portal</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a routerLink="/employer-dashboard" class="nav-item">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a routerLink="/post-vacancy" class="nav-item active">
+                <i class="bi bi-file-earmark-plus"></i>
+                <span>Post Vacancy</span>
+            </a>
+            <a routerLink="/my-vacancies" class="nav-item">
+                <i class="bi bi-list-ul"></i>
+                <span>My Vacancies</span>
+            </a>
+            <a routerLink="/applicants" class="nav-item">
+                <i class="bi bi-people"></i>
+                <span>Applicants</span>
+            </a>
+            <a routerLink="/interviews" class="nav-item">
+                <i class="bi bi-calendar-check"></i>
+                <span>Interviews</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-bar-chart"></i>
+                <span>Analytics</span>
+            </a>
+            <a routerLink="/company-profile" class="nav-item">
+                <i class="bi bi-building"></i>
+                <span>Company Profile</span>
+            </a>
+            <a routerLink="/settings" class="nav-item">
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <img src="https://i.pravatar.cc/150?img=33" alt="User" class="rounded-circle me-2"
+                    style="width: 40px; height: 40px;">
+                <div class="flex-grow-1">
+                    <p class="mb-0 small fw-bold">John Recruiter</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">HR Manager</p>
+                </div>
+                <i class="bi bi-box-arrow-right cursor-pointer"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar bg-white border-bottom p-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">Post New Vacancy</h3>
+                    <p class="text-muted small mb-0">Fill in the details below to create a new job opening.</p>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" routerLink="/employer-dashboard">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                </button>
+            </div>
+        </div>
+
+        <div class="content-wrapper p-4">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <form [formGroup]="vacancyForm" (ngSubmit)="onSubmit()">
+                                <div class="row g-4">
+                                    <!-- Job Title -->
+                                    <div class="col-md-12">
+                                        <label class="form-label">Job Title</label>
+                                        <input type="text" class="form-control" formControlName="jobTitle"
+                                            placeholder="e.g. Senior Software Engineer">
+                                        <div class="text-danger small mt-1"
+                                            *ngIf="vacancyForm.get('jobTitle')?.touched && vacancyForm.get('jobTitle')?.errors?.['required']">
+                                            Job title is required
+                                        </div>
+                                    </div>
+
+                                    <!-- Category & Location -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">Category</label>
+                                        <select class="form-select" formControlName="category">
+                                            <option value="">Select Category</option>
+                                            <option value="IT & Software">IT & Software</option>
+                                            <option value="Marketing">Marketing</option>
+                                            <option value="Sales">Sales</option>
+                                            <option value="Finance">Finance</option>
+                                            <option value="Human Resources">Human Resources</option>
+                                        </select>
+                                        <div class="text-danger small mt-1"
+                                            *ngIf="vacancyForm.get('category')?.touched && vacancyForm.get('category')?.errors?.['required']">
+                                            Category is required
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Location</label>
+                                        <input type="text" class="form-control" formControlName="location"
+                                            placeholder="e.g. Remote, New York, NY">
+                                        <div class="text-danger small mt-1"
+                                            *ngIf="vacancyForm.get('location')?.touched && vacancyForm.get('location')?.errors?.['required']">
+                                            Location is required
+                                        </div>
+                                    </div>
+
+                                    <!-- Employment Type & Salary -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">Employment Type</label>
+                                        <select class="form-select" formControlName="employmentType">
+                                            <option value="Full-time">Full-time</option>
+                                            <option value="Part-time">Part-time</option>
+                                            <option value="Contract">Contract</option>
+                                            <option value="Internship">Internship</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Salary Range (Optional)</label>
+                                        <input type="text" class="form-control" formControlName="salaryRange"
+                                            placeholder="e.g. $80k - $120k">
+                                    </div>
+
+                                    <!-- Description -->
+                                    <div class="col-md-12">
+                                        <label class="form-label">Job Description</label>
+                                        <textarea class="form-control" formControlName="description" rows="6"
+                                            placeholder="Describe the role, responsibilities, and team..."></textarea>
+                                        <div class="text-danger small mt-1"
+                                            *ngIf="vacancyForm.get('description')?.touched && vacancyForm.get('description')?.errors?.['required']">
+                                            Job description is required
+                                        </div>
+                                    </div>
+
+                                    <!-- Requirements -->
+                                    <div class="col-md-12">
+                                        <label class="form-label">Requirements</label>
+                                        <textarea class="form-control" formControlName="requirements" rows="4"
+                                            placeholder="List the key requirements and qualifications..."></textarea>
+                                        <div class="text-danger small mt-1"
+                                            *ngIf="vacancyForm.get('requirements')?.touched && vacancyForm.get('requirements')?.errors?.['required']">
+                                            Requirements are required
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Button -->
+                                    <div class="col-md-12 text-end mt-4">
+                                        <button type="button" class="btn btn-light me-2"
+                                            routerLink="/employer-dashboard">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-send me-2"></i>Post Vacancy
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

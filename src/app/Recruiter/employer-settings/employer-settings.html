@@ -1,1 +1,247 @@
-<p>employer-settings works!</p>
+<div class="settings-container">
+    <!-- Sidebar -->
+    <aside class="sidebar bg-dark text-white">
+        <div class="sidebar-header p-4">
+            <h4 class="mb-0"><i class="bi bi-briefcase-fill me-2"></i>Recruitify</h4>
+            <p class="text-muted small mb-0">Recruiter Portal</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a routerLink="/employer-dashboard" class="nav-item">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a routerLink="/post-vacancy" class="nav-item">
+                <i class="bi bi-file-earmark-plus"></i>
+                <span>Post Vacancy</span>
+            </a>
+            <a routerLink="/my-vacancies" class="nav-item">
+                <i class="bi bi-list-ul"></i>
+                <span>My Vacancies</span>
+            </a>
+            <a routerLink="/applicants" class="nav-item">
+                <i class="bi bi-people"></i>
+                <span>Applicants</span>
+            </a>
+            <a routerLink="/interviews" class="nav-item">
+                <i class="bi bi-calendar-check"></i>
+                <span>Interviews</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-bar-chart"></i>
+                <span>Analytics</span>
+            </a>
+            <a routerLink="/company-profile" class="nav-item">
+                <i class="bi bi-building"></i>
+                <span>Company Profile</span>
+            </a>
+            <a routerLink="/settings" class="nav-item active">
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <img src="https://i.pravatar.cc/150?img=33" alt="User" class="rounded-circle me-2"
+                    style="width: 40px; height: 40px;">
+                <div class="flex-grow-1">
+                    <p class="mb-0 small fw-bold">John Recruiter</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">HR Manager</p>
+                </div>
+                <i class="bi bi-box-arrow-right cursor-pointer"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar bg-white border-bottom p-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">Settings</h3>
+                    <p class="text-muted small mb-0">Manage your account preferences and team settings.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="row g-4">
+                <!-- Settings Navigation -->
+                <div class="col-lg-3">
+                    <div class="card border-0 shadow-sm p-3">
+                        <nav class="settings-nav d-flex flex-column gap-2">
+                            <button class="nav-link" [ngClass]="activeTab === 'profile' ? 'active' : ''"
+                                (click)="setTab('profile')">
+                                <i class="bi bi-person-circle me-3"></i>My Profile
+                            </button>
+                            <button class="nav-link" [ngClass]="activeTab === 'notifications' ? 'active' : ''"
+                                (click)="setTab('notifications')">
+                                <i class="bi bi-bell me-3"></i>Notifications
+                            </button>
+                            <button class="nav-link" [ngClass]="activeTab === 'security' ? 'active' : ''"
+                                (click)="setTab('security')">
+                                <i class="bi bi-shield-lock me-3"></i>Security
+                            </button>
+                            <button class="nav-link" [ngClass]="activeTab === 'team' ? 'active' : ''"
+                                (click)="setTab('team')">
+                                <i class="bi bi-people me-3"></i>Team Members
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Settings Content -->
+                <div class="col-lg-9">
+                    <!-- Profile Tab -->
+                    <div class="card border-0 shadow-sm p-4" *ngIf="activeTab === 'profile'">
+                        <h5 class="fw-bold mb-4">Personal Information</h5>
+                        <div class="d-flex align-items-center mb-4">
+                            <img [src]="userProfile.avatar" class="avatar-preview me-4" alt="Avatar">
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary mb-2">Change Photo</button>
+                                <p class="text-muted small mb-0">JPG or PNG. Max size 800kB.</p>
+                            </div>
+                        </div>
+                        <form (ngSubmit)="saveSettings()">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" class="form-control" [(ngModel)]="userProfile.firstName"
+                                        name="firstName">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" [(ngModel)]="userProfile.lastName"
+                                        name="lastName">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" [(ngModel)]="userProfile.email"
+                                        name="email">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="text" class="form-control" [(ngModel)]="userProfile.phone"
+                                        name="phone">
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label">Your Role</label>
+                                    <input type="text" class="form-control" [(ngModel)]="userProfile.role" name="role"
+                                        readonly>
+                                </div>
+                                <div class="col-12 mt-4 text-end">
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Notifications Tab -->
+                    <div class="card border-0 shadow-sm p-4" *ngIf="activeTab === 'notifications'">
+                        <h5 class="fw-bold mb-4">Notification Preferences</h5>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0">
+                                <div>
+                                    <label class="form-check-label fw-bold">New Applications</label>
+                                    <p class="text-muted small mb-0">Email me when a new candidate applies.</p>
+                                </div>
+                                <input class="form-check-input ms-0" type="checkbox"
+                                    [(ngModel)]="notificationSettings.newApplications">
+                            </div>
+                            <hr>
+                            <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0">
+                                <div>
+                                    <label class="form-check-label fw-bold">Interview Reminders</label>
+                                    <p class="text-muted small mb-0">Get notified 30 minutes before an interview.</p>
+                                </div>
+                                <input class="form-check-input ms-0" type="checkbox"
+                                    [(ngModel)]="notificationSettings.interviewReminders">
+                            </div>
+                            <hr>
+                            <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0">
+                                <div>
+                                    <label class="form-check-label fw-bold">Weekly Digest</label>
+                                    <p class="text-muted small mb-0">A summary of your hiring activities every Monday.
+                                    </p>
+                                </div>
+                                <input class="form-check-input ms-0" type="checkbox"
+                                    [(ngModel)]="notificationSettings.weeklyDigest">
+                            </div>
+                        </div>
+                        <div class="text-end mt-4">
+                            <button class="btn btn-primary" (click)="saveSettings()">Save Preferences</button>
+                        </div>
+                    </div>
+
+                    <!-- Team Tab -->
+                    <div class="card border-0 shadow-sm p-0" *ngIf="activeTab === 'team'">
+                        <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+                            <h5 class="fw-bold mb-0">Team Members</h5>
+                            <button class="btn btn-sm btn-primary">Add Member</button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">Name</th>
+                                            <th>Role</th>
+                                            <th>Status</th>
+                                            <th class="text-end pe-4">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let member of teamMembers">
+                                            <td class="ps-4">
+                                                <div class="fw-bold">{{ member.name }}</div>
+                                                <small class="text-muted">{{ member.email }}</small>
+                                            </td>
+                                            <td>{{ member.role }}</td>
+                                            <td>
+                                                <span class="badge"
+                                                    [ngClass]="member.status === 'Active' ? 'bg-success' : 'bg-warning'">
+                                                    {{ member.status }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <button class="btn btn-sm btn-light"><i
+                                                        class="bi bi-three-dots-vertical"></i></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Placeholder -->
+                    <div class="card border-0 shadow-sm p-4" *ngIf="activeTab === 'security'">
+                        <h5 class="fw-bold mb-4">Security Settings</h5>
+                        <div class="mb-4">
+                            <h6>Change Password</h6>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button class="btn btn-primary">Update Password</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

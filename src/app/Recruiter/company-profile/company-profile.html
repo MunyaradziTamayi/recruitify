@@ -1,1 +1,163 @@
-<p>company-profile works!</p>
+<div class="profile-container">
+    <!-- Sidebar -->
+    <aside class="sidebar bg-dark text-white">
+        <div class="sidebar-header p-4">
+            <h4 class="mb-0"><i class="bi bi-briefcase-fill me-2"></i>Recruitify</h4>
+            <p class="text-muted small mb-0">Recruiter Portal</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a routerLink="/employer-dashboard" class="nav-item">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a routerLink="/post-vacancy" class="nav-item">
+                <i class="bi bi-file-earmark-plus"></i>
+                <span>Post Vacancy</span>
+            </a>
+            <a routerLink="/my-vacancies" class="nav-item">
+                <i class="bi bi-list-ul"></i>
+                <span>My Vacancies</span>
+            </a>
+            <a routerLink="/applicants" class="nav-item">
+                <i class="bi bi-people"></i>
+                <span>Applicants</span>
+            </a>
+            <a routerLink="/interviews" class="nav-item">
+                <i class="bi bi-calendar-check"></i>
+                <span>Interviews</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-bar-chart"></i>
+                <span>Analytics</span>
+            </a>
+            <a routerLink="/company-profile" class="nav-item active">
+                <i class="bi bi-building"></i>
+                <span>Company Profile</span>
+            </a>
+            <a routerLink="/settings" class="nav-item">
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <img src="https://i.pravatar.cc/150?img=33" alt="User" class="rounded-circle me-2"
+                    style="width: 40px; height: 40px;">
+                <div class="flex-grow-1">
+                    <p class="mb-0 small fw-bold">John Recruiter</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">HR Manager</p>
+                </div>
+                <i class="bi bi-box-arrow-right cursor-pointer"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar bg-white border-bottom p-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">Company Profile</h3>
+                    <p class="text-muted small mb-0">Customize how your company appears to candidates.</p>
+                </div>
+                <button class="btn btn-primary" (click)="toggleEdit()">
+                    <i class="bi" [ngClass]="isEditing ? 'bi-check-circle' : 'bi-pencil-square'"></i>
+                    <span class="ms-2">{{ isEditing ? 'Save Profile' : 'Edit Profile' }}</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="row g-4">
+                <!-- Company Overview -->
+                <div class="col-lg-8">
+                    <div class="card info-card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-4">
+                                <img [src]="company.logo" class="company-logo me-4" alt="Logo">
+                                <div>
+                                    <h2 class="mb-1 fw-bold" *ngIf="!isEditing">{{ company.name }}</h2>
+                                    <input type="text" class="form-control form-control-lg mb-2" *ngIf="isEditing"
+                                        [(ngModel)]="company.name">
+                                    <p class="text-muted mb-0"><i class="bi bi-geo-alt me-2"></i>{{ company.location }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3">About Company</h6>
+                                <p class="text-secondary" *ngIf="!isEditing">{{ company.description }}</p>
+                                <textarea class="form-control" rows="4" *ngIf="isEditing"
+                                    [(ngModel)]="company.description"></textarea>
+                            </div>
+
+                            <div>
+                                <h6 class="fw-bold mb-3">Company Culture</h6>
+                                <p class="text-secondary" *ngIf="!isEditing">{{ company.culture }}</p>
+                                <textarea class="form-control" rows="4" *ngIf="isEditing"
+                                    [(ngModel)]="company.culture"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card info-card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold mb-4">Benefits & Perks</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                <div class="benefit-tag" *ngFor="let benefit of company.benefits">
+                                    <i class="bi bi-check2 me-1"></i>{{ benefit }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Company Details Sidebar -->
+                <div class="col-lg-4">
+                    <div class="card info-card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold mb-4">Quick Information</h6>
+                            <div class="mb-3">
+                                <label class="form-label d-block text-muted small">Website</label>
+                                <a [href]="'https://' + company.website" class="text-primary text-decoration-none"
+                                    *ngIf="!isEditing">{{ company.website }}</a>
+                                <input type="text" class="form-control form-control-sm" *ngIf="isEditing"
+                                    [(ngModel)]="company.website">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label d-block text-muted small">Industry</label>
+                                <span class="fw-medium" *ngIf="!isEditing">{{ company.industry }}</span>
+                                <input type="text" class="form-control form-control-sm" *ngIf="isEditing"
+                                    [(ngModel)]="company.industry">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label d-block text-muted small">Company Size</label>
+                                <span class="fw-medium" *ngIf="!isEditing">{{ company.size }}</span>
+                                <select class="form-select form-select-sm" *ngIf="isEditing" [(ngModel)]="company.size">
+                                    <option>1-10 Employees</option>
+                                    <option>11-50 Employees</option>
+                                    <option>51-100 Employees</option>
+                                    <option>101-500 Employees</option>
+                                    <option>500+ Employees</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="card info-card border-0 shadow-sm bg-primary bg-opacity-10 border-primary border-opacity-25">
+                        <div class="card-body p-4 text-center">
+                            <h6 class="fw-bold text-primary mb-2">Build Your Team</h6>
+                            <p class="small text-secondary mb-3">Looking to add more recruiters to your organization?
+                            </p>
+                            <button class="btn btn-primary btn-sm w-100">Invite Team Members</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

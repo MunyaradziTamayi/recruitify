@@ -1,0 +1,131 @@
+<div class="interviews-container">
+    <!-- Sidebar -->
+    <aside class="sidebar bg-dark text-white">
+        <div class="sidebar-header p-4">
+            <h4 class="mb-0"><i class="bi bi-briefcase-fill me-2"></i>Recruitify</h4>
+            <p class="text-muted small mb-0">Recruiter Portal</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a routerLink="/employer-dashboard" class="nav-item">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a routerLink="/post-vacancy" class="nav-item">
+                <i class="bi bi-file-earmark-plus"></i>
+                <span>Post Vacancy</span>
+            </a>
+            <a routerLink="/my-vacancies" class="nav-item">
+                <i class="bi bi-list-ul"></i>
+                <span>My Vacancies</span>
+            </a>
+            <a routerLink="/applicants" class="nav-item">
+                <i class="bi bi-people"></i>
+                <span>Applicants</span>
+            </a>
+            <a routerLink="/interviews" class="nav-item active">
+                <i class="bi bi-calendar-check"></i>
+                <span>Interviews</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-bar-chart"></i>
+                <span>Analytics</span>
+            </a>
+            <a routerLink="/company-profile" class="nav-item">
+                <i class="bi bi-building"></i>
+                <span>Company Profile</span>
+            </a>
+            <a routerLink="/settings" class="nav-item">
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer p-3 mt-auto">
+            <div class="d-flex align-items-center">
+                <img src="https://i.pravatar.cc/150?img=33" alt="User" class="rounded-circle me-2"
+                    style="width: 40px; height: 40px;">
+                <div class="flex-grow-1">
+                    <p class="mb-0 small fw-bold">John Recruiter</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">HR Manager</p>
+                </div>
+                <i class="bi bi-box-arrow-right cursor-pointer"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar bg-white border-bottom p-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">Interviews</h3>
+                    <p class="text-muted small mb-0">Manage and keep track of your candidate interviews.</p>
+                </div>
+                <button class="btn btn-primary">
+                    <i class="bi bi-calendar-plus me-2"></i>Schedule Interview
+                </button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <!-- Tabs -->
+            <div class="nav nav-pills mb-4 gap-2">
+                <button class="btn btn-sm btn-primary">Upcoming</button>
+                <button class="btn btn-sm btn-outline-secondary">Past</button>
+                <button class="btn btn-sm btn-outline-secondary">Cancelled</button>
+            </div>
+
+            <!-- Interviews List -->
+            <div class="row g-4">
+                <div class="col-12" *ngFor="let interview of interviews">
+                    <div class="card interview-card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center">
+                                        <img [src]="interview.avatar" class="candidate-avatar rounded-circle me-3"
+                                            [alt]="interview.candidateName">
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">{{ interview.candidateName }}</h6>
+                                            <p class="text-muted small mb-0">{{ interview.position }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="d-flex flex-column">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="bi bi-calendar-event me-2 text-primary"></i>
+                                            <span class="small">{{ interview.date }}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-clock me-2 text-primary"></i>
+                                            <span class="small">{{ interview.time }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="d-flex align-items-center">
+                                        <i [class]="'bi ' + getTypeIcon(interview.type) + ' me-2 text-muted'"></i>
+                                        <span class="small">{{ interview.type }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <span class="badge" [ngClass]="getStatusClass(interview.status)">
+                                        {{ interview.status }}
+                                    </span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <button class="btn btn-sm btn-primary w-100 mb-2"
+                                        *ngIf="interview.type === 'Virtual'">Join Call</button>
+                                    <button class="btn btn-sm btn-outline-secondary w-100">Actions</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

@@ -1,4 +1,4 @@
-.post-vacancy-container {
+.interviews-container {
     display: flex;
     min-height: 100vh;
     background-color: #f8f9fa;
@@ -73,41 +73,33 @@
 
 .content-wrapper {
     flex: 1;
-    background-color: #f8f9fa;
+    padding: 2rem;
 }
 
-/* Form Styles */
-.card {
+/* Interview Card */
+.interview-card {
     border-radius: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.form-label {
-    font-weight: 600;
-    font-size: 0.9rem;
+.interview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+.candidate-avatar {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+}
+
+.time-badge {
+    background-color: #e9ecef;
     color: #495057;
-}
-
-.form-control,
-.form-select {
-    padding: 0.75rem 1rem;
+    padding: 0.4rem 0.8rem;
     border-radius: 8px;
-    border: 1px solid #dee2e6;
-}
-
-.form-control:focus,
-.form-select:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
-}
-
-textarea.form-control {
-    resize: none;
-}
-
-.btn-primary {
-    padding: 0.75rem 2rem;
-    font-weight: 600;
-    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
 /* Utility */

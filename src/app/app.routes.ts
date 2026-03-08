@@ -5,6 +5,12 @@ import { EmployerDashboard } from './Recruiter/employer-dashboard/employer-dashb
 import { BrowseJobs } from './jobseeker/browse-jobs/browse-jobs';
 import { MyApplications } from './jobseeker/my-applications/my-applications';
 import { EmployeeProfile } from './jobseeker/employee-profile/employee-profile';
+import { PostVacancy } from './Recruiter/post-vacancy/post-vacancy';
+import { MyVacancies } from './Recruiter/my-vacancies/my-vacancies';
+import { VacancyApplicants } from './Recruiter/vacancy-applicants/vacancy-applicants';
+import { EmployerInterviews } from './Recruiter/employer-interviews/employer-interviews';
+import { CompanyProfile } from './Recruiter/company-profile/company-profile';
+import { EmployerSettings } from './Recruiter/employer-settings/employer-settings';
 
 export const routes: Routes = [
     {
@@ -35,5 +41,29 @@ export const routes: Routes = [
     {
         path: 'employee-profile',
         component: EmployeeProfile
+    },
+    {
+        path: 'post-vacancy',
+        component: PostVacancy
+    },
+    {
+        path: 'my-vacancies',
+        component: MyVacancies
+    },
+    {
+        path: 'applicants',
+        component: VacancyApplicants
+    },
+    {
+        path: 'interviews',
+        component: EmployerInterviews
+    },
+    {
+        path: 'company-profile',
+        component: CompanyProfile
+    },
+    {
+        path: 'settings',
+        component: EmployerSettings
     }
 ];
