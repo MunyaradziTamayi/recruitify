@@ -39,13 +39,14 @@
 
         <div class="sidebar-footer p-3 mt-auto">
             <div class="d-flex align-items-center">
-                <img src="https://i.pravatar.cc/150?img=33" alt="User" class="rounded-circle me-2"
-                    style="width: 40px; height: 40px;">
+                <img [src]="user.imageUrl" [alt]="user.name" class="rounded-circle me-2"
+                    style="width: 40px; height: 40px; object-fit: cover;">
                 <div class="flex-grow-1">
-                    <p class="mb-0 small fw-bold">John Recruiter</p>
-                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">HR Manager</p>
+                    <p class="mb-0 small fw-bold">{{ user.name }}</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.75rem;">{{ user.email || user.role }}</p>
                 </div>
-                <i class="bi bi-box-arrow-right cursor-pointer"></i>
+                <i class="bi bi-box-arrow-right cursor-pointer" role="button" tabindex="0" title="Log out"
+                    (click)="logout()"></i>
             </div>
         </div>
     </aside>
@@ -57,7 +58,8 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h3 class="mb-0">Dashboard</h3>
-                    <p class="text-muted small mb-0">Welcome back! Here's what's happening with your recruitment.</p>
+                    <p class="text-muted small mb-0">Welcome back, {{ user.name }}! Here's what's happening with your
+                        recruitment.</p>
                 </div>
                 <button class="btn btn-primary" routerLink="/post-vacancy">
                     <i class="bi bi-plus-circle me-2"></i>Post New Vacancy

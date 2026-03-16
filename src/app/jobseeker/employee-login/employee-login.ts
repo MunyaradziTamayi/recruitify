@@ -32,14 +32,27 @@ export class EmployeeLogin implements OnInit {
   }
 
   private decodeToken(token: string) {
-    return atob(token.split('.')[1]);
+    const payload = token.split('.')[1];
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+    return atob(padded);
   }
 
   handleLogin(response: any) {
     if (response != null && response != undefined) {
       const user_object = JSON.parse(this.decodeToken(response.credential));
-      sessionStorage.setItem('loggedInUser', JSON.stringify(user_object));
-      this.router.navigate(['employee-dashboard']);
+
+      const userId = user_object?.sub ?? user_object?.email;
+      const storedRole = userId ? (localStorage.getItem(`recruitify:userRole:${userId}`) as any) : null;
+
+      if (storedRole === 'recruiter' || storedRole === 'employee') {
+        sessionStorage.setItem('loggedInUser', JSON.stringify({ ...user_object, role: storedRole }));
+        this.router.navigate([storedRole === 'recruiter' ? 'employer-dashboard' : 'employee-dashboard']);
+        return;
+      }
+
+      sessionStorage.setItem('pendingGoogleUser', JSON.stringify(user_object));
+      this.router.navigate(['complete-registration']);
     } else {
       console.log('Failed to authenticate');
     }

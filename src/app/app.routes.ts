@@ -11,6 +11,7 @@ import { VacancyApplicants } from './Recruiter/vacancy-applicants/vacancy-applic
 import { EmployerInterviews } from './Recruiter/employer-interviews/employer-interviews';
 import { CompanyProfile } from './Recruiter/company-profile/company-profile';
 import { EmployerSettings } from './Recruiter/employer-settings/employer-settings';
+import { CompleteRegistration } from './auth/complete-registration/complete-registration';
 
 export const routes: Routes = [
     {
@@ -25,6 +26,10 @@ export const routes: Routes = [
     {
         path: 'employee-dashboard',
         component: EmployeeDashboard
+    },
+    {
+        path: 'complete-registration',
+        component: CompleteRegistration
     },
     {
         path: 'employer-dashboard',

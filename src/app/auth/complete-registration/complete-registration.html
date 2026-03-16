@@ -1,0 +1,25 @@
+<div class="complete-wrapper">
+  <div class="complete-card">
+    <h1>Complete registration</h1>
+    <p class="subtitle">Hi {{ userName }} — choose how you want to use Recruitify.</p>
+
+    <div class="roles">
+      <button type="button" class="role-card" [class.active]="selectedRole === 'employee'"
+        (click)="chooseRole('employee')">
+        <h2>Regular user</h2>
+        <p>Browse jobs and apply.</p>
+      </button>
+
+      <button type="button" class="role-card" [class.active]="selectedRole === 'recruiter'"
+        (click)="chooseRole('recruiter')">
+        <h2>Recruiter</h2>
+        <p>Post vacancies and manage applicants.</p>
+      </button>
+    </div>
+
+    <p class="error" *ngIf="error">{{ error }}</p>
+
+    <button type="button" class="continue" (click)="continue()">Continue</button>
+  </div>
+</div>
+

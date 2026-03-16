@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 interface DashboardStats {
   totalVacancies: number;
@@ -29,6 +29,13 @@ interface Applicant {
   avatar: string;
 }
 
+interface RecruiterProfile {
+  name: string;
+  email: string;
+  role: string;
+  imageUrl: string;
+}
+
 @Component({
   selector: 'app-employer-dashboard',
   standalone: true,
@@ -36,7 +43,39 @@ interface Applicant {
   templateUrl: './employer-dashboard.html',
   styleUrl: './employer-dashboard.css',
 })
-export class EmployerDashboard {
+export class EmployerDashboard implements OnInit {
+  user: RecruiterProfile = {
+    name: '',
+    email: '',
+    role: 'Recruiter',
+    imageUrl: ''
+  };
+
+  constructor(private router: Router) { }
+
+  ngOnInit(): void {
+    const storedUser = sessionStorage.getItem('loggedInUser');
+    if (!storedUser) {
+      this.router.navigate(['employee-login']);
+      return;
+    }
+
+    const googleUser = JSON.parse(storedUser);
+    const role = googleUser?.role;
+
+    if (role && role !== 'recruiter') {
+      this.router.navigate(['employee-dashboard']);
+      return;
+    }
+
+    this.user = {
+      name: googleUser.name || 'Recruiter',
+      email: googleUser.email || '',
+      role: 'Recruiter',
+      imageUrl: googleUser.picture || 'https://i.pravatar.cc/150?img=33'
+    };
+  }
+
   stats: DashboardStats = {
     totalVacancies: 12,
     activeApplications: 48,
@@ -136,5 +175,11 @@ export class EmployerDashboard {
 
   getStatusText(status: string): string {
     return status.charAt(0).toUpperCase() + status.slice(1);
+  }
+
+  logout() {
+    sessionStorage.removeItem('loggedInUser');
+    sessionStorage.removeItem('pendingGoogleUser');
+    this.router.navigate(['employee-login']);
   }
 }

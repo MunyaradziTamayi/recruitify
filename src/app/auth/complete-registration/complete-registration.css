@@ -1,0 +1,89 @@
+.complete-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(1200px 600px at 20% 10%, rgba(59, 130, 246, 0.16), transparent),
+    radial-gradient(900px 500px at 80% 20%, rgba(99, 102, 241, 0.16), transparent),
+    linear-gradient(180deg, #0b1220, #0b1220);
+  color: #e5e7eb;
+}
+
+.complete-card {
+  width: 100%;
+  max-width: 560px;
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+}
+
+h1 {
+  margin: 0 0 6px 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0 0 18px 0;
+  color: rgba(229, 231, 235, 0.75);
+}
+
+.roles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 16px 0 10px;
+}
+
+.role-card {
+  text-align: left;
+  border-radius: 14px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: inherit;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.role-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.65);
+}
+
+.role-card.active {
+  border-color: rgba(59, 130, 246, 0.8);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.role-card h2 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.role-card p {
+  margin: 0;
+  color: rgba(229, 231, 235, 0.75);
+}
+
+.error {
+  margin: 10px 0 0;
+  color: #fca5a5;
+}
+
+.continue {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 0;
+  cursor: pointer;
+  font-weight: 700;
+  color: #0b1220;
+  background: linear-gradient(90deg, #60a5fa, #6366f1);
+}
+
