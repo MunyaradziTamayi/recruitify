@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
 
 interface Vacancy {
   id: number;
@@ -16,7 +17,7 @@ interface Vacancy {
 @Component({
   selector: 'app-my-vacancies',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, RecruiterAccount],
   templateUrl: './my-vacancies.html',
   styleUrl: './my-vacancies.css',
 })

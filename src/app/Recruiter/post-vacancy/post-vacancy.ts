@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
+import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
 
 @Component({
   selector: 'app-post-vacancy',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, RecruiterAccount],
   templateUrl: './post-vacancy.html',
   styleUrl: './post-vacancy.css',
 })

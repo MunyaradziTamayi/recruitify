@@ -1,0 +1,13 @@
+<div class="sidebar-footer p-3 mt-auto" *ngIf="profile as p">
+  <div class="d-flex align-items-center">
+    <img [src]="p.imageUrl" [alt]="p.name" class="rounded-circle me-2"
+      style="width: 40px; height: 40px; object-fit: cover;">
+    <div class="flex-grow-1">
+      <p class="mb-0 small fw-bold">{{ p.name }}</p>
+      <p class="mb-0 text-muted" style="font-size: 0.75rem;">{{ p.email || p.roleLabel }}</p>
+    </div>
+    <i class="bi bi-box-arrow-right cursor-pointer" role="button" tabindex="0" title="Log out"
+      (click)="logout()"></i>
+  </div>
+</div>
+

@@ -1,4 +1,4 @@
-export interface Employer {
+export interface Recruiter {
     id?: number;
     firstName: string;
     lastName: string;

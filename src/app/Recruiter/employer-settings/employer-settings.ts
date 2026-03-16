@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
 
 @Component({
   selector: 'app-employer-settings',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, RecruiterAccount],
   templateUrl: './employer-settings.html',
   styleUrl: './employer-settings.css',
 })

@@ -1,95 +1,117 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-
-interface Applicant {
-  id: number;
-  name: string;
-  position: string;
-  appliedDate: string;
-  status: 'pending' | 'reviewed' | 'interview' | 'rejected' | 'hired';
-  avatar: string;
-}
+import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
+import { Application } from '../../models/application.model';
 
 @Component({
   selector: 'app-vacancy-applicants',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, RecruiterAccount],
   templateUrl: './vacancy-applicants.html',
   styleUrl: './vacancy-applicants.css',
 })
 export class VacancyApplicants {
-  applicants: Applicant[] = [
+  applications: Application[] = [
     {
       id: 1,
-      name: 'Sarah Johnson',
-      position: 'Senior Frontend Developer',
+      vacancyId: 101,
+      candidateId: 1001,
+      candidateName: 'Sarah Johnson',
+      candidateAvatar: 'https://i.pravatar.cc/150?img=5',
       appliedDate: '2 hours ago',
-      status: 'pending',
-      avatar: 'https://i.pravatar.cc/150?img=5'
+      status: 'New',
+      resumeUrl: '#',
+      coverLetter: 'Excited to apply for this role. I have 6+ years building Angular apps.',
+      position: 'Senior Frontend Developer',
     },
     {
       id: 2,
-      name: 'Michael Chen',
-      position: 'UX/UI Designer',
+      vacancyId: 102,
+      candidateId: 1002,
+      candidateName: 'Michael Chen',
+      candidateAvatar: 'https://i.pravatar.cc/150?img=12',
       appliedDate: '5 hours ago',
-      status: 'reviewed',
-      avatar: 'https://i.pravatar.cc/150?img=12'
+      status: 'Reviewed',
+      resumeUrl: '#',
+      coverLetter: 'Portfolio and case studies attached.',
+      position: 'UX/UI Designer',
     },
     {
       id: 3,
-      name: 'Emily Rodriguez',
-      position: 'Product Manager',
+      vacancyId: 103,
+      candidateId: 1003,
+      candidateName: 'Emily Rodriguez',
+      candidateAvatar: 'https://i.pravatar.cc/150?img=9',
       appliedDate: '1 day ago',
-      status: 'interview',
-      avatar: 'https://i.pravatar.cc/150?img=9'
+      status: 'Interviewed',
+      resumeUrl: '#',
+      coverLetter: 'Strong background in SaaS product delivery.',
+      position: 'Product Manager',
     },
     {
       id: 4,
-      name: 'David Kim',
-      position: 'Senior Frontend Developer',
+      vacancyId: 101,
+      candidateId: 1004,
+      candidateName: 'David Kim',
+      candidateAvatar: 'https://i.pravatar.cc/150?img=14',
       appliedDate: '1 day ago',
-      status: 'reviewed',
-      avatar: 'https://i.pravatar.cc/150?img=14'
+      status: 'Shortlisted',
+      resumeUrl: '#',
+      coverLetter: 'Happy to share GitHub and references.',
+      position: 'Senior Frontend Developer',
     },
     {
       id: 5,
-      name: 'Jessica Taylor',
-      position: 'UX/UI Designer',
+      vacancyId: 102,
+      candidateId: 1005,
+      candidateName: 'Jessica Taylor',
+      candidateAvatar: 'https://i.pravatar.cc/150?img=20',
       appliedDate: '2 days ago',
-      status: 'pending',
-      avatar: 'https://i.pravatar.cc/150?img=20'
+      status: 'New',
+      resumeUrl: '#',
+      coverLetter: 'Design-first approach with strong UX research experience.',
+      position: 'UX/UI Designer',
     },
     {
       id: 6,
-      name: 'Robert Wilson',
-      position: 'Senior Frontend Developer',
+      vacancyId: 101,
+      candidateId: 1006,
+      candidateName: 'Robert Wilson',
+      candidateAvatar: 'https://i.pravatar.cc/150?img=11',
       appliedDate: '3 days ago',
-      status: 'rejected',
-      avatar: 'https://i.pravatar.cc/150?img=11'
+      status: 'Rejected',
+      resumeUrl: '#',
+      coverLetter: 'Thank you for reviewing my application.',
+      position: 'Senior Frontend Developer',
     },
     {
       id: 7,
-      name: 'Alice Brown',
-      position: 'Product Manager',
+      vacancyId: 103,
+      candidateId: 1007,
+      candidateName: 'Alice Brown',
+      candidateAvatar: 'https://i.pravatar.cc/150?img=16',
       appliedDate: '4 days ago',
-      status: 'hired',
-      avatar: 'https://i.pravatar.cc/150?img=16'
+      status: 'Hired',
+      resumeUrl: '#',
+      coverLetter: 'Looking forward to joining the team.',
+      position: 'Product Manager',
     }
   ];
 
   getStatusClass(status: string): string {
     const statusClasses: { [key: string]: string } = {
-      'pending': 'bg-warning',
-      'reviewed': 'bg-info',
-      'interview': 'bg-primary',
-      'rejected': 'bg-danger',
-      'hired': 'bg-success'
+      'New': 'bg-warning text-dark',
+      'Reviewed': 'bg-info',
+      'Interviewed': 'bg-primary',
+      'Shortlisted': 'bg-secondary',
+      'Rejected': 'bg-danger',
+      'Hired': 'bg-success',
     };
     return statusClasses[status] || 'bg-secondary';
   }
 
   getStatusText(status: string): string {
-    return status.charAt(0).toUpperCase() + status.slice(1);
+    return status;
   }
 }

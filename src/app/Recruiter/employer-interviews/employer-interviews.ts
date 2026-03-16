@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
 
 interface Interview {
     id: number;
@@ -16,7 +17,7 @@ interface Interview {
 @Component({
     selector: 'app-employer-interviews',
     standalone: true,
-    imports: [CommonModule, RouterModule],
+    imports: [CommonModule, RouterModule, RecruiterAccount],
     templateUrl: './employer-interviews.html',
     styleUrl: './employer-interviews.css',
 })

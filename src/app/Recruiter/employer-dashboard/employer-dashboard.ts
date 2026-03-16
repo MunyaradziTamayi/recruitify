@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { AuthSessionService } from '../../auth/auth-session.service';
+import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
 
 interface DashboardStats {
   totalVacancies: number;
@@ -39,7 +41,7 @@ interface RecruiterProfile {
 @Component({
   selector: 'app-employer-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, RecruiterAccount],
   templateUrl: './employer-dashboard.html',
   styleUrl: './employer-dashboard.css',
 })
@@ -51,29 +53,34 @@ export class EmployerDashboard implements OnInit {
     imageUrl: ''
   };
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private authSession: AuthSessionService,
+  ) { }
 
   ngOnInit(): void {
-    const storedUser = sessionStorage.getItem('loggedInUser');
-    if (!storedUser) {
+    const loggedInUser = this.authSession.getLoggedInUser();
+    if (!loggedInUser) {
       this.router.navigate(['employee-login']);
       return;
     }
 
-    const googleUser = JSON.parse(storedUser);
-    const role = googleUser?.role;
+    const role = loggedInUser?.role;
 
     if (role && role !== 'recruiter') {
       this.router.navigate(['employee-dashboard']);
       return;
     }
 
-    this.user = {
-      name: googleUser.name || 'Recruiter',
-      email: googleUser.email || '',
-      role: 'Recruiter',
-      imageUrl: googleUser.picture || 'https://i.pravatar.cc/150?img=33'
-    };
+    const profile = this.authSession.getAccountProfile(loggedInUser);
+    if (profile) {
+      this.user = {
+        name: profile.name,
+        email: profile.email,
+        role: 'Recruiter',
+        imageUrl: profile.imageUrl,
+      };
+    }
   }
 
   stats: DashboardStats = {
@@ -177,9 +184,5 @@ export class EmployerDashboard implements OnInit {
     return status.charAt(0).toUpperCase() + status.slice(1);
   }
 
-  logout() {
-    sessionStorage.removeItem('loggedInUser');
-    sessionStorage.removeItem('pendingGoogleUser');
-    this.router.navigate(['employee-login']);
-  }
+  // Logout is handled by <app-recruiter-account /> in the sidebar footer.
 }
