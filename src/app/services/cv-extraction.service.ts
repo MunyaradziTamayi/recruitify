@@ -1,4 +1,4 @@
-// services/cv-extraction.service.ts
+﻿// services/cv-extraction.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -8,7 +8,7 @@ import { CandidateProfileDto } from '../models/candidate-profile.model';
   providedIn: 'root'
 })
 export class CvExtractionService {
-  private readonly apiUrl = 'http://localhost:8080/api/cv';
+  private readonly apiUrl = '/api/cv';
 
   constructor(private http: HttpClient) {}
 
@@ -19,3 +19,4 @@ export class CvExtractionService {
     return this.http.post<CandidateProfileDto>(`${this.apiUrl}/upload`, formData);
   }
 }
+
