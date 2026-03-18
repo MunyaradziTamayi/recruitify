@@ -6,8 +6,8 @@ export interface Recruiter {
     phone?: string;
     role: string;
     avatarUrl?: string;
-    companyId: number;
-    createdAt: string;
+    companyId: number | null;
+    createdAt: string | null;
     notificationPreferences: {
         newApplications: boolean;
         interviewReminders: boolean;

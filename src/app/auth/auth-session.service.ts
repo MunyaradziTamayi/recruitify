@@ -30,6 +30,18 @@ export class AuthSessionService {
     }
   }
 
+  getUserId(user: LoggedInUser | null): string | null {
+    if (!user) return null;
+
+    const email = user.email;
+    if (typeof email === 'string' && email.trim()) return email.trim();
+
+    const sub = user['sub'];
+    if (typeof sub === 'string' && sub.trim()) return sub.trim();
+
+    return null;
+  }
+
   getAccountProfile(user: LoggedInUser | null): AccountProfile | null {
     if (!user) return null;
 
@@ -52,4 +64,3 @@ export class AuthSessionService {
     sessionStorage.removeItem('pendingGoogleUser');
   }
 }
-

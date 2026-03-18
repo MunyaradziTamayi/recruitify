@@ -1,0 +1,113 @@
+<div class="setup-wrapper">
+  <div class="card shadow-sm border-0 setup-card">
+    <div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+        <div>
+          <h2 class="mb-1">Set up your company</h2>
+          <p class="text-muted mb-0">Add company details so you can start posting vacancies.</p>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="logout()">
+          Sign out
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="saveAndContinue()">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label">Company name *</label>
+            <input class="form-control" type="text" formControlName="name" placeholder="e.g. TechFlow Solutions" />
+            <div class="text-danger small mt-1" *ngIf="form.controls.name.touched && form.controls.name.invalid">
+              Company name is required
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Company size *</label>
+            <select class="form-select" formControlName="size">
+              <option value="">Select size</option>
+              <option>1-10 Employees</option>
+              <option>11-50 Employees</option>
+              <option>51-100 Employees</option>
+              <option>101-500 Employees</option>
+              <option>500+ Employees</option>
+            </select>
+            <div class="text-danger small mt-1" *ngIf="form.controls.size.touched && form.controls.size.invalid">
+              Company size is required
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Industry *</label>
+            <input class="form-control" type="text" formControlName="industry" placeholder="e.g. Technology" />
+            <div class="text-danger small mt-1" *ngIf="form.controls.industry.touched && form.controls.industry.invalid">
+              Industry is required
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Location *</label>
+            <input class="form-control" type="text" formControlName="location" placeholder="e.g. Harare, Zimbabwe" />
+            <div class="text-danger small mt-1" *ngIf="form.controls.location.touched && form.controls.location.invalid">
+              Location is required
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Website</label>
+            <input class="form-control" type="text" formControlName="website" placeholder="e.g. www.example.com" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Logo URL</label>
+            <input class="form-control" type="text" formControlName="logoUrl" placeholder="Optional" />
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">About company *</label>
+            <textarea class="form-control" rows="4" formControlName="description"
+              placeholder="Describe what your company does..."></textarea>
+            <div class="text-danger small mt-1"
+              *ngIf="form.controls.description.touched && form.controls.description.invalid">
+              Description is required
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Company culture</label>
+            <textarea class="form-control" rows="3" formControlName="culture"
+              placeholder="Optional: values, working style, etc."></textarea>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Benefits (one per line)</label>
+            <textarea class="form-control" rows="3" formControlName="benefitsRaw"
+              placeholder="Flexible working hours&#10;Health insurance&#10;Remote-friendly"></textarea>
+          </div>
+
+          <div class="col-12">
+            <h6 class="mt-2 mb-2">Social links (optional)</h6>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">LinkedIn</label>
+            <input class="form-control" type="text" formControlName="linkedin" placeholder="https://linkedin.com/..." />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Twitter/X</label>
+            <input class="form-control" type="text" formControlName="twitter" placeholder="https://x.com/..." />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Facebook</label>
+            <input class="form-control" type="text" formControlName="facebook" placeholder="https://facebook.com/..." />
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <p class="text-danger mb-0" *ngIf="error">{{ error }}</p>
+          <button type="submit" class="btn btn-primary">
+            {{ existingCompany ? 'Save & Continue' : 'Create Company & Continue' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

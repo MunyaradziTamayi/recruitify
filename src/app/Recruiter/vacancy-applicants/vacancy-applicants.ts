@@ -1,8 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
 import { Application } from '../../models/application.model';
+import { ApplicationService } from '../../services/application.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { distinctUntilChanged, map, switchMap, tap } from 'rxjs';
 
 @Component({
   selector: 'app-vacancy-applicants',
@@ -11,93 +14,43 @@ import { Application } from '../../models/application.model';
   templateUrl: './vacancy-applicants.html',
   styleUrl: './vacancy-applicants.css',
 })
-export class VacancyApplicants {
-  applications: Application[] = [
-    {
-      id: 1,
-      vacancyId: 101,
-      candidateId: 1001,
-      candidateName: 'Sarah Johnson',
-      candidateAvatar: 'https://i.pravatar.cc/150?img=5',
-      appliedDate: '2 hours ago',
-      status: 'New',
-      resumeUrl: '#',
-      coverLetter: 'Excited to apply for this role. I have 6+ years building Angular apps.',
-      position: 'Senior Frontend Developer',
-    },
-    {
-      id: 2,
-      vacancyId: 102,
-      candidateId: 1002,
-      candidateName: 'Michael Chen',
-      candidateAvatar: 'https://i.pravatar.cc/150?img=12',
-      appliedDate: '5 hours ago',
-      status: 'Reviewed',
-      resumeUrl: '#',
-      coverLetter: 'Portfolio and case studies attached.',
-      position: 'UX/UI Designer',
-    },
-    {
-      id: 3,
-      vacancyId: 103,
-      candidateId: 1003,
-      candidateName: 'Emily Rodriguez',
-      candidateAvatar: 'https://i.pravatar.cc/150?img=9',
-      appliedDate: '1 day ago',
-      status: 'Interviewed',
-      resumeUrl: '#',
-      coverLetter: 'Strong background in SaaS product delivery.',
-      position: 'Product Manager',
-    },
-    {
-      id: 4,
-      vacancyId: 101,
-      candidateId: 1004,
-      candidateName: 'David Kim',
-      candidateAvatar: 'https://i.pravatar.cc/150?img=14',
-      appliedDate: '1 day ago',
-      status: 'Shortlisted',
-      resumeUrl: '#',
-      coverLetter: 'Happy to share GitHub and references.',
-      position: 'Senior Frontend Developer',
-    },
-    {
-      id: 5,
-      vacancyId: 102,
-      candidateId: 1005,
-      candidateName: 'Jessica Taylor',
-      candidateAvatar: 'https://i.pravatar.cc/150?img=20',
-      appliedDate: '2 days ago',
-      status: 'New',
-      resumeUrl: '#',
-      coverLetter: 'Design-first approach with strong UX research experience.',
-      position: 'UX/UI Designer',
-    },
-    {
-      id: 6,
-      vacancyId: 101,
-      candidateId: 1006,
-      candidateName: 'Robert Wilson',
-      candidateAvatar: 'https://i.pravatar.cc/150?img=11',
-      appliedDate: '3 days ago',
-      status: 'Rejected',
-      resumeUrl: '#',
-      coverLetter: 'Thank you for reviewing my application.',
-      position: 'Senior Frontend Developer',
-    },
-    {
-      id: 7,
-      vacancyId: 103,
-      candidateId: 1007,
-      candidateName: 'Alice Brown',
-      candidateAvatar: 'https://i.pravatar.cc/150?img=16',
-      appliedDate: '4 days ago',
-      status: 'Hired',
-      resumeUrl: '#',
-      coverLetter: 'Looking forward to joining the team.',
-      position: 'Product Manager',
-    }
-  ];
+export class VacancyApplicants implements OnInit {
+  applications: Application[] = [];
+  loading = false;
+  error: string | null = null;
+
+  private readonly applicationService = inject(ApplicationService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+
+  ngOnInit(): void {
+    this.route.queryParamMap
+      .pipe(
+        map((params) => {
+          const vacancyId = params.get('vacancyId');
+          return vacancyId != null && vacancyId !== '' ? Number(vacancyId) : undefined;
+        }),
+        distinctUntilChanged(),
+        tap(() => {
+          this.loading = true;
+          this.error = null;
+        }),
+        switchMap((vacancyId) => this.applicationService.getApplications({ vacancyId })),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: (applications) => {
+          this.applications = applications;
+          this.loading = false;
+        },
+        error: (err) => {
+          this.applications = [];
+          this.loading = false;
+          this.error = 'Failed to load applications. Make sure the backend is running on port 8080.';
+          console.error(err);
+        },
+      });
+  }
 
   getStatusClass(status: string): string {
     const statusClasses: { [key: string]: string } = {

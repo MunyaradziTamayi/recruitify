@@ -1,15 +1,15 @@
 export interface ExperienceDto {
   jobTitle: string;
   company: string;
-  startDate: string;
-  endDate: string;
+  startDate: string | null;
+  endDate: string | null;
   description: string;
 }
 
 export interface EducationDto {
   degree: string;
   institution: string;
-  graduationYear: string;
+  graduationYear: string | null;
   description: string;
 }
 

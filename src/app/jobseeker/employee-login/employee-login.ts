@@ -3,6 +3,8 @@ declare var google: any;
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { RecruiterService } from '../../services/recruiter.service';
+import { ProfileService } from '../../services/profile.service';
 
 @Component({
   selector: 'app-employee-login',
@@ -13,7 +15,11 @@ import { Router } from '@angular/router';
 })
 export class EmployeeLogin implements OnInit {
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private recruiters: RecruiterService,
+    private profiles: ProfileService,
+  ) {}
 
   ngOnInit(): void {
     google.accounts.id.initialize({
@@ -42,17 +48,43 @@ export class EmployeeLogin implements OnInit {
     if (response != null && response != undefined) {
       const user_object = JSON.parse(this.decodeToken(response.credential));
 
-      const userId = user_object?.sub ?? user_object?.email;
-      const storedRole = userId ? (localStorage.getItem(`recruitify:userRole:${userId}`) as any) : null;
-
-      if (storedRole === 'recruiter' || storedRole === 'employee') {
-        sessionStorage.setItem('loggedInUser', JSON.stringify({ ...user_object, role: storedRole }));
-        this.router.navigate([storedRole === 'recruiter' ? 'employer-dashboard' : 'employee-dashboard']);
+      const email = typeof user_object?.email === 'string' ? user_object.email.trim() : '';
+      if (!email) {
+        sessionStorage.setItem('pendingGoogleUser', JSON.stringify(user_object));
+        this.router.navigate(['complete-registration']);
         return;
       }
 
-      sessionStorage.setItem('pendingGoogleUser', JSON.stringify(user_object));
-      this.router.navigate(['complete-registration']);
+      this.recruiters.findRecruiterByEmail(email).subscribe({
+        next: (recruiter) => {
+          if (recruiter?.id) {
+            sessionStorage.setItem('loggedInUser', JSON.stringify({ ...user_object, role: 'recruiter', recruiterId: recruiter.id }));
+            this.router.navigate(['employer-dashboard']);
+            return;
+          }
+
+          this.profiles.findProfileByEmail(email).subscribe({
+            next: (profile) => {
+              if (profile?.id) {
+                sessionStorage.setItem('loggedInUser', JSON.stringify({ ...user_object, role: 'employee', profileId: profile.id }));
+                this.router.navigate(['employee-dashboard']);
+                return;
+              }
+
+              sessionStorage.setItem('pendingGoogleUser', JSON.stringify(user_object));
+              this.router.navigate(['complete-registration']);
+            },
+            error: () => {
+              sessionStorage.setItem('pendingGoogleUser', JSON.stringify(user_object));
+              this.router.navigate(['complete-registration']);
+            },
+          });
+        },
+        error: () => {
+          sessionStorage.setItem('pendingGoogleUser', JSON.stringify(user_object));
+          this.router.navigate(['complete-registration']);
+        },
+      });
     } else {
       console.log('Failed to authenticate');
     }

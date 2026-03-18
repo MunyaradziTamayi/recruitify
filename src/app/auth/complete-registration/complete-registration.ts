@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { RecruiterService } from '../../services/recruiter.service';
+import { ProfileService } from '../../services/profile.service';
 
 type UserRole = 'recruiter' | 'employee';
 
@@ -16,7 +18,11 @@ export class CompleteRegistration implements OnInit {
   selectedRole: UserRole | null = null;
   error = '';
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private recruiters: RecruiterService,
+    private profiles: ProfileService,
+  ) {}
 
   ngOnInit(): void {
     const pendingUser = sessionStorage.getItem('pendingGoogleUser');
@@ -47,7 +53,8 @@ export class CompleteRegistration implements OnInit {
     }
 
     const user = JSON.parse(pendingUserRaw);
-    const userId = user?.sub ?? user?.email;
+    const email = user?.email;
+    const userId = email ?? user?.sub;
 
     if (!userId) {
       this.error = 'Unable to identify your account. Please sign in again.';
@@ -56,12 +63,111 @@ export class CompleteRegistration implements OnInit {
       return;
     }
 
-    localStorage.setItem(`recruitify:userRole:${userId}`, this.selectedRole);
+    const name = typeof user?.name === 'string' ? user.name.trim() : '';
+    const parts = name.split(/\s+/g).filter(Boolean);
+    const firstName = parts[0] ?? 'Recruiter';
+    const lastName = parts.length > 1 ? parts.slice(1).join(' ') : 'User';
 
-    sessionStorage.removeItem('pendingGoogleUser');
-    sessionStorage.setItem('loggedInUser', JSON.stringify({ ...user, role: this.selectedRole }));
+    if (this.selectedRole === 'recruiter') {
+      if (typeof email !== 'string' || !email.trim()) {
+        this.error = 'A valid email is required to create your recruiter account.';
+        return;
+      }
 
-    this.router.navigate([this.selectedRole === 'recruiter' ? 'employer-dashboard' : 'employee-dashboard']);
+      this.recruiters.findRecruiterByEmail(email).subscribe({
+        next: (existing) => {
+          if (existing?.id) {
+            sessionStorage.removeItem('pendingGoogleUser');
+            sessionStorage.setItem('loggedInUser', JSON.stringify({ ...user, role: 'recruiter', recruiterId: existing.id }));
+            this.router.navigate(['company-setup']);
+            return;
+          }
+
+          this.recruiters
+            .createRecruiter({
+              firstName,
+              lastName,
+              email: email.trim(),
+              phone: '',
+              role: 'recruiter',
+              avatarUrl: typeof user?.picture === 'string' ? user.picture : '',
+              companyId: null,
+              createdAt: new Date().toISOString(),
+              notificationPreferences: {
+                newApplications: true,
+                interviewReminders: true,
+                weeklyDigest: true,
+                marketingEmails: false,
+              },
+            })
+            .subscribe({
+              next: (created) => {
+                sessionStorage.removeItem('pendingGoogleUser');
+                sessionStorage.setItem(
+                  'loggedInUser',
+                  JSON.stringify({ ...user, role: 'recruiter', recruiterId: created.id ?? null }),
+                );
+                this.router.navigate(['company-setup']);
+              },
+              error: () => {
+                this.error = 'Failed to create recruiter account. Please try again.';
+              },
+            });
+        },
+        error: () => {
+          this.error = 'Failed to complete registration. Please try again.';
+        },
+      });
+      return;
+    }
+
+    if (typeof email !== 'string' || !email.trim()) {
+      this.error = 'A valid email is required to create your employee profile.';
+      return;
+    }
+
+    this.profiles.findProfileByEmail(email).subscribe({
+      next: (existing) => {
+        if (existing?.id) {
+          sessionStorage.removeItem('pendingGoogleUser');
+          sessionStorage.setItem('loggedInUser', JSON.stringify({ ...user, role: 'employee', profileId: existing.id }));
+          this.router.navigate(['employee-dashboard']);
+          return;
+        }
+
+        this.profiles
+          .createProfile({
+            name: name || 'User',
+            email: email.trim(),
+            phone: '',
+            address: '',
+            objectives: null,
+            lookingForJob: null,
+            desiredJobTitle: null,
+            desiredCategory: null,
+            preferredWorkMode: null,
+            preferredLocation: null,
+            salaryMin: null,
+            salaryMax: null,
+            salaryCurrency: null,
+            skills: [],
+            experiences: [],
+            educations: [],
+          })
+          .subscribe({
+            next: (created) => {
+              sessionStorage.removeItem('pendingGoogleUser');
+              sessionStorage.setItem('loggedInUser', JSON.stringify({ ...user, role: 'employee', profileId: created.id }));
+              this.router.navigate(['employee-dashboard']);
+            },
+            error: () => {
+              this.error = 'Failed to create employee profile. Please try again.';
+            },
+          });
+      },
+      error: () => {
+        this.error = 'Failed to complete registration. Please try again.';
+      },
+    });
   }
 }
-

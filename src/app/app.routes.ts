@@ -12,6 +12,9 @@ import { EmployerInterviews } from './Recruiter/employer-interviews/employer-int
 import { CompanyProfile } from './Recruiter/company-profile/company-profile';
 import { EmployerSettings } from './Recruiter/employer-settings/employer-settings';
 import { CompleteRegistration } from './auth/complete-registration/complete-registration';
+import { CompanySetup } from './auth/company-setup/company-setup';
+import { recruiterCompanyGuard } from './auth/recruiter-company.guard';
+import { recruiterOnlyGuard } from './auth/recruiter-only.guard';
 
 export const routes: Routes = [
     {
@@ -32,8 +35,14 @@ export const routes: Routes = [
         component: CompleteRegistration
     },
     {
+        path: 'company-setup',
+        component: CompanySetup,
+        canActivate: [recruiterOnlyGuard]
+    },
+    {
         path: 'employer-dashboard',
-        component: EmployerDashboard
+        component: EmployerDashboard,
+        canActivate: [recruiterCompanyGuard]
     },
     {
         path: 'browse-jobs',
@@ -49,26 +58,32 @@ export const routes: Routes = [
     },
     {
         path: 'post-vacancy',
-        component: PostVacancy
+        component: PostVacancy,
+        canActivate: [recruiterCompanyGuard]
     },
     {
         path: 'my-vacancies',
-        component: MyVacancies
+        component: MyVacancies,
+        canActivate: [recruiterCompanyGuard]
     },
     {
         path: 'applicants',
-        component: VacancyApplicants
+        component: VacancyApplicants,
+        canActivate: [recruiterCompanyGuard]
     },
     {
         path: 'interviews',
-        component: EmployerInterviews
+        component: EmployerInterviews,
+        canActivate: [recruiterCompanyGuard]
     },
     {
         path: 'company-profile',
-        component: CompanyProfile
+        component: CompanyProfile,
+        canActivate: [recruiterCompanyGuard]
     },
     {
         path: 'settings',
-        component: EmployerSettings
+        component: EmployerSettings,
+        canActivate: [recruiterCompanyGuard]
     }
 ];
