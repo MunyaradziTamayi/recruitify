@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Interview } from '../models/interview.model';
 import { API_BASE_URL } from '../config/api-base-url';
@@ -25,8 +25,12 @@ export class InterviewService {
     return this.http.get<Interview>(`${this.baseUrl}/${id}`);
   }
 
-  getInterviews(): Observable<Interview[]> {
-    return this.http.get<Interview[]>(this.baseUrl);
+  getInterviews(query: { candidateId?: number; recruiterId?: number } = {}): Observable<Interview[]> {
+    let params = new HttpParams();
+    if (query.candidateId != null) params = params.set('candidateId', String(query.candidateId));
+    if (query.recruiterId != null) params = params.set('recruiterId', String(query.recruiterId));
+
+    return this.http.get<Interview[]>(this.baseUrl, { params });
   }
 
   updateInterview(id: number, request: InterviewUpsert): Observable<Interview> {

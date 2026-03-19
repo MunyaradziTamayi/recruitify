@@ -109,7 +109,10 @@
                         </div>
                     </div>
 
-                    <div class="row g-4">
+                    <div class="p-3 text-muted" *ngIf="isLoadingVacancies">Loading vacancies...</div>
+                    <div class="alert alert-warning m-3" *ngIf="vacanciesLoadError">{{ vacanciesLoadError }}</div>
+
+                    <div class="row g-4" *ngIf="!isLoadingVacancies && !vacanciesLoadError">
                         <div class="col-12" *ngFor="let job of filteredJobs">
                             <div class="card border-0 shadow-sm job-card h-100">
                                 <div class="card-body p-4">
@@ -159,7 +162,7 @@
                     </div>
 
                     <!-- Empty State -->
-                    <div *ngIf="filteredJobs.length === 0" class="text-center py-5">
+                    <div *ngIf="!isLoadingVacancies && !vacanciesLoadError && filteredJobs.length === 0" class="text-center py-5">
                         <div class="mb-4">
                             <i class="bi bi-search" style="font-size: 4rem; color: #dee2e6;"></i>
                         </div>

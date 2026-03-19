@@ -77,7 +77,7 @@
                             <thead>
                                 <tr>
                                     <th>Vacancy Details</th>
-                                    <th>Department</th>
+                                    <th>Category</th>
                                     <th>Applicants</th>
                                     <th>Date Posted</th>
                                     <th>Status</th>
@@ -85,7 +85,18 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr *ngFor="let vacancy of vacancies">
+                                <tr *ngIf="isLoading">
+                                    <td colspan="6" class="p-4 text-muted">Loading vacancies...</td>
+                                </tr>
+                                <tr *ngIf="!isLoading && loadError as error">
+                                    <td colspan="6" class="p-4">
+                                        <div class="alert alert-warning mb-0">{{ error }}</div>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="!isLoading && !loadError && vacancies.length === 0">
+                                    <td colspan="6" class="p-4 text-muted">No vacancies yet. Post a new vacancy to get started.</td>
+                                </tr>
+                                <tr *ngFor="let vacancy of vacancies; trackBy: trackByVacancyId">
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3"
@@ -99,15 +110,14 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{{ vacancy.department }}</td>
+                                    <td>{{ vacancy.category || '-' }}</td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <span class="badge bg-light text-dark border me-2">{{ vacancy.applicants
-                                                }}</span>
+                                            <span class="badge bg-light text-dark border me-2">{{ vacancy.applicantCount }}</span>
                                             <small class="text-muted">Applied</small>
                                         </div>
                                     </td>
-                                    <td>{{ vacancy.postedDate }}</td>
+                                    <td>{{ vacancy.postedDate | date:'mediumDate' }}</td>
                                     <td>
                                         <span class="badge" [ngClass]="getStatusClass(vacancy.status)">
                                             {{ getStatusText(vacancy.status) }}
@@ -116,7 +126,7 @@
                                     <td class="text-end">
                                         <div class="d-flex justify-content-end gap-2">
                                             <button class="btn btn-action btn-outline-primary" title="View Applicants"
-                                                routerLink="/applicants">
+                                                routerLink="/applicants" [queryParams]="{ vacancyId: vacancy.id }">
                                                 <i class="bi bi-people"></i>
                                             </button>
                                             <button class="btn btn-action btn-outline-info" title="Edit">

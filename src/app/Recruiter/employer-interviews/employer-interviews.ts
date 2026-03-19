@@ -1,7 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
+import { InterviewService } from '../../services/interview.service';
+import { AuthSessionService } from '../../auth/auth-session.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface Interview {
     id: number;
@@ -10,7 +13,7 @@ interface Interview {
     date: string;
     time: string;
     type: 'Virtual' | 'In-person' | 'Phone';
-    status: 'Upcoming' | 'Completed' | 'Cancelled';
+    status: 'Upcoming' | 'Completed' | 'Cancelled' | 'Rescheduled';
     avatar: string;
 }
 
@@ -21,55 +24,56 @@ interface Interview {
     templateUrl: './employer-interviews.html',
     styleUrl: './employer-interviews.css',
 })
-export class EmployerInterviews {
-    interviews: Interview[] = [
-        {
-            id: 1,
-            candidateName: 'Sarah Johnson',
-            position: 'Senior Frontend Developer',
-            date: 'March 10, 2026',
-            time: '10:00 AM',
-            type: 'Virtual',
-            status: 'Upcoming',
-            avatar: 'https://i.pravatar.cc/150?img=5'
-        },
-        {
-            id: 2,
-            candidateName: 'Michael Chen',
-            position: 'UX/UI Designer',
-            date: 'March 11, 2026',
-            time: '02:30 PM',
-            type: 'Virtual',
-            status: 'Upcoming',
-            avatar: 'https://i.pravatar.cc/150?img=12'
-        },
-        {
-            id: 3,
-            candidateName: 'Emily Rodriguez',
-            position: 'Product Manager',
-            date: 'March 12, 2026',
-            time: '11:15 AM',
-            type: 'In-person',
-            status: 'Upcoming',
-            avatar: 'https://i.pravatar.cc/150?img=9'
-        },
-        {
-            id: 4,
-            candidateName: 'David Kim',
-            position: 'Senior Frontend Developer',
-            date: 'March 05, 2026',
-            time: '09:00 AM',
-            type: 'Phone',
-            status: 'Completed',
-            avatar: 'https://i.pravatar.cc/150?img=14'
+export class EmployerInterviews implements OnInit {
+    private readonly destroyRef = inject(DestroyRef);
+    interviews: Interview[] = [];
+    isLoading = false;
+
+    constructor(
+        private interviewService: InterviewService,
+        private authSession: AuthSessionService,
+        private router: Router
+    ) {}
+
+    ngOnInit(): void {
+        const loggedInUser = this.authSession.getLoggedInUser();
+        if (!loggedInUser) {
+            this.router.navigate(['employee-login']);
+            return;
         }
-    ];
+
+        const recruiterId = (loggedInUser as any).profileId;
+        if (!recruiterId) return;
+
+        this.isLoading = true;
+        this.interviewService.getInterviews({ recruiterId })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (data) => {
+                    this.interviews = data.map(i => ({
+                        id: i.id ?? 0,
+                        candidateName: i.candidateName,
+                        position: i.position,
+                        date: i.date,
+                        time: i.time,
+                        type: i.type as any,
+                        status: i.status as any,
+                        avatar: i.candidateAvatar || 'https://i.pravatar.cc/150?img=5'
+                    }));
+                    this.isLoading = false;
+                },
+                error: () => {
+                    this.isLoading = false;
+                }
+            });
+    }
 
     getStatusClass(status: string): string {
         const statusClasses: { [key: string]: string } = {
             'Upcoming': 'bg-primary',
             'Completed': 'bg-success',
-            'Cancelled': 'bg-danger'
+            'Cancelled': 'bg-danger',
+            'Rescheduled': 'bg-warning text-dark'
         };
         return statusClasses[status] || 'bg-secondary';
     }

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { CandidateProfile, CandidateProfileRequest } from '../models/profile.model';
 import { API_BASE_URL } from '../config/api-base-url';
 
@@ -32,8 +32,10 @@ export class ProfileService {
     const normalized = email.trim().toLowerCase();
     if (!normalized) return of(null);
 
-    return this.getProfiles().pipe(
-      map((profiles) => profiles.find((p) => p.email?.trim().toLowerCase() === normalized) ?? null),
+    const params = new HttpParams().set('email', normalized);
+    return this.http.get<CandidateProfile>(`${this.baseUrl}/search`, { params }).pipe(
+      catchError(() => of(null)),
+      map((profile) => profile ?? null),
     );
   }
 

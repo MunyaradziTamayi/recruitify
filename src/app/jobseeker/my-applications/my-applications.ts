@@ -1,16 +1,26 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, finalize, map } from 'rxjs/operators';
+import { AuthSessionService } from '../../auth/auth-session.service';
+import { ApplicationService } from '../../services/application.service';
+import { VacancyService } from '../../services/vacancy.service';
+import { CompanyService } from '../../services/company.service';
+import { Application } from '../../models/application.model';
+import { Vacancy } from '../../models/vacancy.model';
+import { Company } from '../../models/company.model';
 
-interface Application {
+interface ApplicationRow {
   id: number;
   jobTitle: string;
   company: string;
   logo: string;
   appliedDate: string;
-  status: 'Pending' | 'Interview' | 'Rejected' | 'Offered';
+  status: Application['status'];
   location: string;
   type: string;
+  vacancyId: number;
 }
 
 interface UserProfile {
@@ -33,71 +43,46 @@ export class MyApplications implements OnInit {
     imageUrl: ''
   };
 
-  applications: Application[] = [
-    {
-      id: 1,
-      jobTitle: 'Senior UX Designer',
-      company: 'TechFlow',
-      logo: 'https://cdn-icons-png.flaticon.com/512/281/281764.png',
-      appliedDate: 'Oct 12, 2023',
-      status: 'Interview',
-      location: 'Remote',
-      type: 'Full-time'
-    },
-    {
-      id: 2,
-      jobTitle: 'Full Stack Developer',
-      company: 'InnovateIO',
-      logo: 'https://cdn-icons-png.flaticon.com/512/5968/5968322.png',
-      appliedDate: 'Oct 10, 2023',
-      status: 'Pending',
-      location: 'San Francisco, CA',
-      type: 'Full-time'
-    },
-    {
-      id: 3,
-      jobTitle: 'Product Manager',
-      company: 'SkyNet',
-      logo: 'https://cdn-icons-png.flaticon.com/512/732/732190.png',
-      appliedDate: 'Oct 05, 2023',
-      status: 'Rejected',
-      location: 'Austin, TX',
-      type: 'Contract'
-    },
-    {
-      id: 4,
-      jobTitle: 'UI/UX Designer',
-      company: 'CreativeCo',
-      logo: 'https://cdn-icons-png.flaticon.com/512/732/732221.png',
-      appliedDate: 'Sep 28, 2023',
-      status: 'Offered',
-      location: 'New York, NY',
-      type: 'Part-time'
-    }
-  ];
+  applications: ApplicationRow[] = [];
+  isLoadingApplications = false;
+  applicationsLoadError: string | null = null;
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private authSession: AuthSessionService,
+    private applicationService: ApplicationService,
+    private vacancyService: VacancyService,
+    private companyService: CompanyService,
+  ) {}
 
   ngOnInit(): void {
-    const storedUser = sessionStorage.getItem('loggedInUser');
-    if (storedUser) {
-      const googleUser = JSON.parse(storedUser);
-      this.user = {
-        name: googleUser.name || 'User',
-        email: googleUser.email || '',
-        imageUrl: googleUser.picture || 'https://i.pravatar.cc/150?img=1'
-      };
-    } else {
+    const loggedInUser = this.authSession.getLoggedInUser();
+    const profile = this.authSession.getAccountProfile(loggedInUser);
+    if (!loggedInUser || !profile) {
       this.router.navigate(['employee-login']);
+      return;
     }
+
+    this.user = { name: profile.name, email: profile.email, imageUrl: profile.imageUrl };
+
+    const candidateId = loggedInUser['profileId'];
+    if (typeof candidateId !== 'number') {
+      this.applications = [];
+      this.applicationsLoadError = 'No candidate profile found for this user.';
+      return;
+    }
+
+    this.loadApplications(candidateId);
   }
 
   getStatusClass(status: string): string {
     switch (status) {
-      case 'Interview': return 'status-interview';
-      case 'Pending': return 'status-pending';
       case 'Rejected': return 'status-rejected';
-      case 'Offered': return 'status-offered';
+      case 'Interviewed': return 'status-interview';
+      case 'Hired': return 'status-offered';
+      case 'New': return 'status-pending';
+      case 'Reviewed': return 'status-pending';
+      case 'Shortlisted': return 'status-pending';
       default: return '';
     }
   }
@@ -105,5 +90,77 @@ export class MyApplications implements OnInit {
   logout(): void {
     sessionStorage.removeItem('loggedInUser');
     this.router.navigate(['employee-login']);
+  }
+
+  get activeInterviewsCount(): number {
+    return this.applications.filter((a) => a.status === 'Interviewed').length;
+  }
+
+  get offersCount(): number {
+    return this.applications.filter((a) => a.status === 'Hired').length;
+  }
+
+  get rejectedCount(): number {
+    return this.applications.filter((a) => a.status === 'Rejected').length;
+  }
+
+  private loadApplications(candidateId: number): void {
+    this.isLoadingApplications = true;
+    this.applicationsLoadError = null;
+
+    forkJoin({
+      applications: this.applicationService.getApplications({ candidateId }),
+      vacancies: this.vacancyService.getVacancies().pipe(catchError(() => of([] as Vacancy[]))),
+      companies: this.companyService.getCompanies().pipe(catchError(() => of([] as Company[]))),
+    })
+      .pipe(
+        map(({ applications, vacancies, companies }) => {
+          const vacancyById = new Map<number, Vacancy>(
+            (vacancies ?? []).filter((v) => typeof v.id === 'number').map((v) => [v.id as number, v]),
+          );
+          const companyById = new Map<number, Company>(
+            (companies ?? []).filter((c) => typeof c.id === 'number').map((c) => [c.id as number, c]),
+          );
+
+          return (applications ?? []).map((app): ApplicationRow => {
+            const vacancy = vacancyById.get(app.vacancyId);
+            const companyId = vacancy?.companyId;
+            const company = typeof companyId === 'number' ? companyById.get(companyId) : undefined;
+            const companyName =
+              company?.name ?? (companyId != null ? `Company #${companyId}` : 'Company');
+
+            const jobTitle = app.position || vacancy?.title || 'Vacancy';
+            const location = vacancy?.location || company?.location || '-';
+            const type = vacancy?.employmentType || '-';
+
+            return {
+              id: app.id ?? 0,
+              vacancyId: app.vacancyId,
+              jobTitle,
+              company: companyName,
+              logo: company?.logoUrl || this.buildDefaultLogoUrl(companyName),
+              appliedDate: app.appliedDate,
+              status: app.status,
+              location,
+              type,
+            };
+          });
+        }),
+        catchError(() => {
+          this.applicationsLoadError = 'Unable to load applications right now.';
+          return of([] as ApplicationRow[]);
+        }),
+        finalize(() => {
+          this.isLoadingApplications = false;
+        }),
+      )
+      .subscribe((rows) => {
+        this.applications = rows;
+      });
+  }
+
+  private buildDefaultLogoUrl(companyName: string): string {
+    const encoded = encodeURIComponent(companyName.trim() || 'Company');
+    return `https://ui-avatars.com/api/?name=${encoded}&background=0D6EFD&color=fff&size=128`;
   }
 }

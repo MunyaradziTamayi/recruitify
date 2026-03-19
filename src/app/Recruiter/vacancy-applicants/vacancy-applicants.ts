@@ -1,11 +1,12 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
 import { Application } from '../../models/application.model';
 import { ApplicationService } from '../../services/application.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { distinctUntilChanged, map, switchMap, tap } from 'rxjs';
+import { distinctUntilChanged, map, of, switchMap, tap } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-vacancy-applicants',
@@ -18,37 +19,51 @@ export class VacancyApplicants implements OnInit {
   applications: Application[] = [];
   loading = false;
   error: string | null = null;
+  infoMessage: string | null = null;
 
   private readonly applicationService = inject(ApplicationService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.route.queryParamMap
       .pipe(
         map((params) => {
           const vacancyId = params.get('vacancyId');
-          return vacancyId != null && vacancyId !== '' ? Number(vacancyId) : undefined;
+          if (vacancyId == null || vacancyId === '') return null;
+          const parsed = Number(vacancyId);
+          return Number.isFinite(parsed) ? parsed : null;
         }),
         distinctUntilChanged(),
-        tap(() => {
-          this.loading = true;
+        tap((vacancyId) => {
           this.error = null;
+          this.infoMessage = vacancyId == null ? 'Select a vacancy to view its applicants.' : null;
+          this.applications = vacancyId == null ? [] : this.applications;
+          this.loading = vacancyId != null;
+          this.cdr.markForCheck();
         }),
-        switchMap((vacancyId) => this.applicationService.getApplications({ vacancyId })),
+        switchMap((vacancyId) => {
+          if (vacancyId == null) return of([] as Application[]);
+
+          return this.applicationService.getApplications({ vacancyId }).pipe(
+            catchError((err) => {
+              this.error = 'Failed to load applications. Make sure the backend is running on port 8080.';
+              console.error(err);
+              return of([] as Application[]);
+            }),
+            finalize(() => {
+              this.loading = false;
+              this.cdr.markForCheck();
+            }),
+          );
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe({
-        next: (applications) => {
-          this.applications = applications;
-          this.loading = false;
-        },
-        error: (err) => {
-          this.applications = [];
-          this.loading = false;
-          this.error = 'Failed to load applications. Make sure the backend is running on port 8080.';
-          console.error(err);
-        },
+      .subscribe((applications) => {
+        this.applications = applications;
+        this.loading = false;
+        this.cdr.markForCheck();
       });
   }
 

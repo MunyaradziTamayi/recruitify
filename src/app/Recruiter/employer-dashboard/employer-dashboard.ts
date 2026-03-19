@@ -1,8 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthSessionService } from '../../auth/auth-session.service';
 import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
+import { VacancyService } from '../../services/vacancy.service';
+import { ApplicationService } from '../../services/application.service';
+import { InterviewService } from '../../services/interview.service';
+import { CompanyStoreService } from '../../services/company-store.service';
+import { forkJoin, of, EMPTY } from 'rxjs';
+import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface DashboardStats {
   totalVacancies: number;
@@ -19,7 +26,7 @@ interface Vacancy {
   type: string;
   postedDate: string;
   applicants: number;
-  status: 'active' | 'closed' | 'draft';
+  status: 'active' | 'closed' | 'draft' | 'Active' | 'Closed' | 'Draft' | 'Archived';
 }
 
 interface Applicant {
@@ -27,7 +34,7 @@ interface Applicant {
   name: string;
   position: string;
   appliedDate: string;
-  status: 'pending' | 'reviewed' | 'interview' | 'rejected' | 'hired';
+  status: 'pending' | 'reviewed' | 'interview' | 'rejected' | 'hired' | 'New' | 'Reviewed' | 'Shortlisted' | 'Interviewed' | 'Hired' | 'Rejected';
   avatar: string;
 }
 
@@ -46,6 +53,14 @@ interface RecruiterProfile {
   styleUrl: './employer-dashboard.css',
 })
 export class EmployerDashboard implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private companyId: number | null = null;
+  private recruiterId: number | null = null;
+
+  isLoading = false;
+  loadError: string | null = null;
+  
   user: RecruiterProfile = {
     name: '',
     email: '',
@@ -53,9 +68,23 @@ export class EmployerDashboard implements OnInit {
     imageUrl: ''
   };
 
+  stats: DashboardStats = {
+    totalVacancies: 0,
+    activeApplications: 0,
+    interviewsScheduled: 0,
+    hiredThisMonth: 0
+  };
+
+  recentVacancies: Vacancy[] = [];
+  recentApplications: Applicant[] = [];
+
   constructor(
     private router: Router,
     private authSession: AuthSessionService,
+    private vacancyService: VacancyService,
+    private applicationService: ApplicationService,
+    private interviewService: InterviewService,
+    private companyStore: CompanyStoreService,
   ) { }
 
   ngOnInit(): void {
@@ -66,7 +95,6 @@ export class EmployerDashboard implements OnInit {
     }
 
     const role = loggedInUser?.role;
-
     if (role && role !== 'recruiter') {
       this.router.navigate(['employee-dashboard']);
       return;
@@ -81,108 +109,245 @@ export class EmployerDashboard implements OnInit {
         imageUrl: profile.imageUrl,
       };
     }
+
+    const userId = this.authSession.getUserId(loggedInUser);
+    if (!userId) return;
+
+    const recruiterId =
+      typeof (loggedInUser as any).recruiterId === 'number' ? ((loggedInUser as any).recruiterId as number) : null;
+    this.recruiterId = recruiterId;
+
+    this.companyStore
+      .getCompanyForUser(userId)
+      .pipe(
+        switchMap((company) => {
+          if (!company?.id) return EMPTY;
+          this.companyId = company.id;
+          return this.loadDashboard(company.id, recruiterId);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((data) => {
+      const companyVacancyIds = new Set(data.vacancies.map(v => v.id));
+      const companyApplications = data.applications.filter(app => companyVacancyIds.has(app.vacancyId));
+      
+      this.stats = {
+        totalVacancies: data.vacancies.length,
+        activeApplications: companyApplications.filter(app => app.status !== 'Rejected' && app.status !== 'Hired').length,
+        interviewsScheduled: data.interviews.filter(i => i.status === 'Upcoming').length,
+        hiredThisMonth: companyApplications.filter(app => {
+          if (app.status !== 'Hired') return false;
+          const appliedDate = new Date(app.appliedDate);
+          const now = new Date();
+          return appliedDate.getMonth() === now.getMonth() && appliedDate.getFullYear() === now.getFullYear();
+        }).length
+      };
+
+      this.recentVacancies = data.vacancies
+        .sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime())
+        .slice(0, 3)
+        .map(v => ({
+          id: v.id ?? 0,
+          title: v.title,
+          department: v.category,
+          location: v.location,
+          type: v.employmentType,
+          postedDate: this.formatRelativeTime(new Date(v.postedDate)),
+          applicants: v.applicantCount,
+          status: v.status
+        }));
+
+      this.recentApplications = companyApplications
+        .sort((a, b) => new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime())
+        .slice(0, 5)
+        .map(app => ({
+          id: app.id ?? 0,
+          name: app.candidateName,
+          position: app.position,
+          appliedDate: this.formatRelativeTime(new Date(app.appliedDate)),
+          status: app.status as any,
+          avatar: app.candidateAvatar || 'https://i.pravatar.cc/150?img=5'
+        }));
+
+      this.cdr.markForCheck();
+    });
+
+    this.vacancyService.vacancyChanges$
+      .pipe(
+        filter(() => this.companyId != null),
+        filter((event) => {
+          const id = this.companyId;
+          if (id == null) return false;
+          return event.companyId == null || event.companyId === id;
+        }),
+        tap(() => this.cdr.markForCheck()),
+        switchMap(() => {
+          const id = this.companyId;
+          if (id == null) return EMPTY;
+          return this.loadDashboard(id, this.recruiterId);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((data) => {
+        const companyVacancyIds = new Set(data.vacancies.map((v) => v.id));
+        const companyApplications = data.applications.filter((app) => companyVacancyIds.has(app.vacancyId));
+
+        this.stats = {
+          totalVacancies: data.vacancies.length,
+          activeApplications: companyApplications.filter((app) => app.status !== 'Rejected' && app.status !== 'Hired')
+            .length,
+          interviewsScheduled: data.interviews.filter((i) => i.status === 'Upcoming').length,
+          hiredThisMonth: companyApplications.filter((app) => {
+            if (app.status !== 'Hired') return false;
+            const appliedDate = new Date(app.appliedDate);
+            const now = new Date();
+            return appliedDate.getMonth() === now.getMonth() && appliedDate.getFullYear() === now.getFullYear();
+          }).length,
+        };
+
+        this.recentVacancies = data.vacancies
+          .sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime())
+          .slice(0, 3)
+          .map((v) => ({
+            id: v.id ?? 0,
+            title: v.title,
+            department: v.category,
+            location: v.location,
+            type: v.employmentType,
+            postedDate: this.formatRelativeTime(new Date(v.postedDate)),
+            applicants: v.applicantCount,
+            status: v.status,
+          }));
+
+        this.recentApplications = companyApplications
+          .sort((a, b) => new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime())
+          .slice(0, 5)
+          .map((app) => ({
+            id: app.id ?? 0,
+            name: app.candidateName,
+            position: app.position,
+            appliedDate: this.formatRelativeTime(new Date(app.appliedDate)),
+            status: app.status as any,
+            avatar: app.candidateAvatar || 'https://i.pravatar.cc/150?img=5',
+          }));
+
+        this.cdr.markForCheck();
+      });
+
+    this.applicationService.applicationChanges$
+      .pipe(
+        filter(() => this.companyId != null),
+        tap(() => this.cdr.markForCheck()),
+        switchMap(() => {
+          const id = this.companyId;
+          if (id == null) return EMPTY;
+          return this.loadDashboard(id, this.recruiterId);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((data) => {
+        const companyVacancyIds = new Set(data.vacancies.map((v) => v.id));
+        const companyApplications = data.applications.filter((app) => companyVacancyIds.has(app.vacancyId));
+
+        this.stats = {
+          totalVacancies: data.vacancies.length,
+          activeApplications: companyApplications.filter((app) => app.status !== 'Rejected' && app.status !== 'Hired')
+            .length,
+          interviewsScheduled: data.interviews.filter((i) => i.status === 'Upcoming').length,
+          hiredThisMonth: companyApplications.filter((app) => {
+            if (app.status !== 'Hired') return false;
+            const appliedDate = new Date(app.appliedDate);
+            const now = new Date();
+            return appliedDate.getMonth() === now.getMonth() && appliedDate.getFullYear() === now.getFullYear();
+          }).length,
+        };
+
+        this.recentVacancies = data.vacancies
+          .sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime())
+          .slice(0, 3)
+          .map((v) => ({
+            id: v.id ?? 0,
+            title: v.title,
+            department: v.category,
+            location: v.location,
+            type: v.employmentType,
+            postedDate: this.formatRelativeTime(new Date(v.postedDate)),
+            applicants: v.applicantCount,
+            status: v.status,
+          }));
+
+        this.recentApplications = companyApplications
+          .sort((a, b) => new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime())
+          .slice(0, 5)
+          .map((app) => ({
+            id: app.id ?? 0,
+            name: app.candidateName,
+            position: app.position,
+            appliedDate: this.formatRelativeTime(new Date(app.appliedDate)),
+            status: app.status as any,
+            avatar: app.candidateAvatar || 'https://i.pravatar.cc/150?img=5',
+          }));
+
+        this.cdr.markForCheck();
+      });
   }
 
-  stats: DashboardStats = {
-    totalVacancies: 12,
-    activeApplications: 48,
-    interviewsScheduled: 8,
-    hiredThisMonth: 3
-  };
+  private loadDashboard(companyId: number, recruiterId: number | null) {
+    this.isLoading = true;
+    this.loadError = null;
+    this.cdr.markForCheck();
 
-  recentVacancies: Vacancy[] = [
-    {
-      id: 1,
-      title: 'Senior Frontend Developer',
-      department: 'Engineering',
-      location: 'Remote',
-      type: 'Full-time',
-      postedDate: '2 days ago',
-      applicants: 24,
-      status: 'active'
-    },
-    {
-      id: 2,
-      title: 'UX/UI Designer',
-      department: 'Design',
-      location: 'San Francisco, CA',
-      type: 'Full-time',
-      postedDate: '5 days ago',
-      applicants: 18,
-      status: 'active'
-    },
-    {
-      id: 3,
-      title: 'Product Manager',
-      department: 'Product',
-      location: 'New York, NY',
-      type: 'Full-time',
-      postedDate: '1 week ago',
-      applicants: 31,
-      status: 'active'
-    }
-  ];
+    return forkJoin({
+      vacancies: this.vacancyService.getVacanciesForCompany(companyId, { refresh: true }).pipe(catchError(() => of([]))),
+      applications: this.applicationService.getApplications().pipe(catchError(() => of([]))),
+      interviews: recruiterId != null
+        ? this.interviewService.getInterviews({ recruiterId }).pipe(catchError(() => of([])))
+        : of([]),
+    }).pipe(
+      map((data) => ({ ...data, companyId })),
+      catchError(() => {
+        this.loadError = 'Failed to load dashboard data.';
+        return of({ vacancies: [], applications: [], interviews: [], companyId });
+      }),
+      tap(() => {
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      }),
+    );
+  }
 
-  recentApplications: Applicant[] = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      position: 'Senior Frontend Developer',
-      appliedDate: '2 hours ago',
-      status: 'pending',
-      avatar: 'https://i.pravatar.cc/150?img=5'
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      position: 'UX/UI Designer',
-      appliedDate: '5 hours ago',
-      status: 'reviewed',
-      avatar: 'https://i.pravatar.cc/150?img=12'
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      position: 'Product Manager',
-      appliedDate: '1 day ago',
-      status: 'interview',
-      avatar: 'https://i.pravatar.cc/150?img=9'
-    },
-    {
-      id: 4,
-      name: 'David Kim',
-      position: 'Senior Frontend Developer',
-      appliedDate: '1 day ago',
-      status: 'reviewed',
-      avatar: 'https://i.pravatar.cc/150?img=14'
-    },
-    {
-      id: 5,
-      name: 'Jessica Taylor',
-      position: 'UX/UI Designer',
-      appliedDate: '2 days ago',
-      status: 'pending',
-      avatar: 'https://i.pravatar.cc/150?img=20'
-    }
-  ];
+  private formatRelativeTime(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    if (isNaN(diffMs)) return 'Recently';
+    const diffMinutes = Math.floor(diffMs / 60000);
+    if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    return date.toLocaleDateString();
+  }
 
   getStatusClass(status: string): string {
+    const s = status.toLowerCase();
     const statusClasses: { [key: string]: string } = {
       'pending': 'bg-warning',
       'reviewed': 'bg-info',
       'interview': 'bg-primary',
+      'interviewed': 'bg-primary',
       'rejected': 'bg-danger',
       'hired': 'bg-success',
       'active': 'bg-success',
       'closed': 'bg-secondary',
-      'draft': 'bg-secondary'
+      'draft': 'bg-secondary',
+      'shortlisted': 'bg-info',
+      'new': 'bg-warning'
     };
-    return statusClasses[status] || 'bg-secondary';
+    return statusClasses[s] || 'bg-secondary';
   }
 
   getStatusText(status: string): string {
     return status.charAt(0).toUpperCase() + status.slice(1);
   }
-
-  // Logout is handled by <app-recruiter-account /> in the sidebar footer.
 }

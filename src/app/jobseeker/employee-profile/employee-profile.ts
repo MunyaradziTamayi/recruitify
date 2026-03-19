@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { CvUploadComponent } from '../cv-upload/cv-upload.component';
+import { ApplicationService } from '../../services/application.service';
+import { InterviewService } from '../../services/interview.service';
+import { forkJoin } from 'rxjs';
 
 interface Experience {
   company: string;
@@ -70,8 +73,14 @@ export class EmployeeProfile implements OnInit {
   };
 
   profileStrength: number = 0;
+  applicationsCount = 0;
+  interviewsCount = 0;
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private applicationService: ApplicationService,
+    private interviewService: InterviewService,
+  ) { }
 
   ngOnInit(): void {
     const storedUser = sessionStorage.getItem('loggedInUser');
@@ -81,6 +90,11 @@ export class EmployeeProfile implements OnInit {
       this.user.email = googleUser.email || '';
       this.user.imageUrl = googleUser.picture || 'https://i.pravatar.cc/150?img=1';
 
+      const candidateId = googleUser.profileId;
+      if (candidateId) {
+        this.loadCounts(candidateId);
+      }
+
       this.loadExtractedProfile();
       this.calculateProfileStrength();
     } else {
@@ -88,24 +102,31 @@ export class EmployeeProfile implements OnInit {
     }
   }
 
+  private loadCounts(candidateId: number): void {
+    forkJoin({
+      applications: this.applicationService.getApplications({ candidateId }),
+      interviews: this.interviewService.getInterviews({ candidateId })
+    }).subscribe({
+      next: (data) => {
+        this.applicationsCount = data.applications.length;
+        this.interviewsCount = data.interviews.filter(i => i.status === 'Upcoming').length;
+      }
+    });
+  }
+
   loadExtractedProfile() {
     const extractedData = sessionStorage.getItem('extractedProfile');
     if (extractedData) {
       const profile = JSON.parse(extractedData);
 
-      // Update phone and location if present
       if (profile.phone) this.user.phone = profile.phone;
       if (profile.address) this.user.location = profile.address;
-
-      // Update bio if objectives are present
       if (profile.objectives) this.user.bio = profile.objectives;
 
-      // Update skills
       if (profile.skills && profile.skills.length > 0) {
         this.user.skills = profile.skills.map((s: string) => s.toUpperCase());
       }
 
-      // Update experience
       if (profile.experiences && profile.experiences.length > 0) {
         this.user.experience = profile.experiences.map((exp: any) => ({
           company: exp.company,
@@ -114,13 +135,11 @@ export class EmployeeProfile implements OnInit {
           description: exp.description
         }));
 
-        // Update current role based on latest experience
         if (this.user.experience.length > 0) {
           this.user.role = this.user.experience[0].role;
         }
       }
 
-      // Update education
       if (profile.educations && profile.educations.length > 0) {
         this.user.education = profile.educations.map((edu: any) => ({
           school: edu.institution,
@@ -131,7 +150,6 @@ export class EmployeeProfile implements OnInit {
     }
   }
 
-  // Method to be called after CV upload modal closes or via event
   refreshProfile() {
     this.loadExtractedProfile();
     this.calculateProfileStrength();

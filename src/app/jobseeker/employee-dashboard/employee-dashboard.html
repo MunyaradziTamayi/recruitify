@@ -76,8 +76,8 @@
                             <div class="row align-items-center">
                                 <div class="col-md-8">
                                     <h3 class="mb-2">Welcome back, {{ user.name }}! </h3>
-                                    <p class="mb-0 opacity-75">Ready to find your dream job? We have {{ jobs.length }}
-                                        new opportunities for you today.</p>
+                                    <p class="mb-0 opacity-75">Ready to find your dream job? We have {{ newVacanciesCount }}
+                                        new vacancies for you.</p>
                                 </div>
                                 <div class="col-md-4 text-md-end mt-3 mt-md-0">
                                     <button class="btn btn-light btn-lg" data-bs-toggle="modal"
@@ -99,7 +99,7 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <p class="text-muted small mb-1">Applications</p>
-                                    <h3 class="mb-0 fw-bold">12</h3>
+                                <h3 class="mb-0 fw-bold">{{ applicationsCount }}</h3>
                                 </div>
                                 <div class="stat-icon bg-primary bg-opacity-10 text-primary">
                                     <i class="bi bi-file-earmark-text"></i>
@@ -129,7 +129,7 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <p class="text-muted small mb-1">Interviews</p>
-                                    <h3 class="mb-0 fw-bold">3</h3>
+                                <h3 class="mb-0 fw-bold">{{ interviewsCount }}</h3>
                                 </div>
                                 <div class="stat-icon bg-warning bg-opacity-10 text-warning">
                                     <i class="bi bi-calendar-check"></i>
@@ -144,7 +144,7 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <p class="text-muted small mb-1">Profile Views</p>
-                                    <h3 class="mb-0 fw-bold">48</h3>
+                                <h3 class="mb-0 fw-bold">{{ profileViewsCount }}</h3>
                                 </div>
                                 <div class="stat-icon bg-info bg-opacity-10 text-info">
                                     <i class="bi bi-eye"></i>
@@ -221,7 +221,12 @@
                             </div>
                         </div>
                         <div class="card-body p-0">
-                            <div class="job-list">
+                            <div class="p-3 text-muted" *ngIf="isLoadingVacancies">Loading vacancies...</div>
+                            <div class="alert alert-warning m-3" *ngIf="vacanciesLoadError">{{ vacanciesLoadError }}</div>
+                            <div class="p-3 text-muted" *ngIf="!isLoadingVacancies && !vacanciesLoadError && jobs.length === 0">
+                                No vacancies available right now.
+                            </div>
+                            <div class="job-list" *ngIf="!isLoadingVacancies && !vacanciesLoadError">
                                 <div *ngFor="let job of jobs" class="job-item p-4 border-bottom cursor-pointer"
                                     [class.selected-job]="selectedJob?.id === job.id" (click)="selectJob(job)">
                                     <div class="d-flex gap-3">
@@ -232,7 +237,10 @@
                                         <div class="flex-grow-1">
                                             <div class="d-flex justify-content-between align-items-start mb-2">
                                                 <div>
-                                                    <h6 class="mb-1 fw-bold">{{ job.title }}</h6>
+                                                    <h6 class="mb-1 fw-bold">
+                                                        {{ job.title }}
+                                                        <span class="badge bg-primary ms-2" *ngIf="job.isNew">New</span>
+                                                    </h6>
                                                     <p class="text-muted small mb-1">{{ job.company }}</p>
                                                 </div>
                                                 <i class="bi fs-5 cursor-pointer" [class.bi-heart-fill]="job.isSaved"
@@ -252,9 +260,15 @@
                                                         <i class="bi bi-check-circle-fill me-1"></i>Verified
                                                     </span>
                                                 </div>
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                    (click)="$event.stopPropagation()">
-                                                    Quick Apply
+                                                <button class="btn btn-sm"
+                                                    [class.btn-outline-primary]="!isApplied(job.id) && !isApplying(job.id)"
+                                                    [class.btn-success]="isApplied(job.id)"
+                                                    [class.btn-secondary]="isApplying(job.id)"
+                                                    [disabled]="isApplied(job.id) || isApplying(job.id)"
+                                                    (click)="applyForVacancy(job); $event.stopPropagation()">
+                                                    <span *ngIf="isApplying(job.id)"><span class="spinner-border spinner-border-sm me-1"></span>Applying...</span>
+                                                    <span *ngIf="isApplied(job.id)"><i class="bi bi-check-lg me-1"></i>Applied</span>
+                                                    <span *ngIf="!isApplied(job.id) && !isApplying(job.id)">Quick Apply</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -289,8 +303,15 @@
                                 <li>Team player mindset</li>
                             </ul>
 
-                            <button class="btn btn-primary w-100 mt-3">
-                                <i class="bi bi-send me-2"></i>Apply Now
+                            <button class="btn w-100 mt-3"
+                                [class.btn-primary]="!isApplied(selectedJob.id) && !isApplying(selectedJob.id)"
+                                [class.btn-success]="isApplied(selectedJob.id)"
+                                [class.btn-secondary]="isApplying(selectedJob.id)"
+                                [disabled]="isApplied(selectedJob.id) || isApplying(selectedJob.id)"
+                                (click)="applyForVacancy(selectedJob)">
+                                <span *ngIf="isApplying(selectedJob.id)"><span class="spinner-border spinner-border-sm me-1"></span>Applying...</span>
+                                <span *ngIf="isApplied(selectedJob.id)"><i class="bi bi-check-lg me-1"></i>Applied</span>
+                                <span *ngIf="!isApplied(selectedJob.id) && !isApplying(selectedJob.id)"><i class="bi bi-send me-2"></i>Apply Now</span>
                             </button>
                             <button class="btn btn-outline-secondary w-100 mt-2">
                                 <i class="bi bi-share me-2"></i>Share Job

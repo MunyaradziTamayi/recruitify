@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject, tap } from 'rxjs';
 import { Application } from '../models/application.model';
 import { API_BASE_URL } from '../config/api-base-url';
 
@@ -12,11 +12,19 @@ export type ApplicationQuery = {
 
 export type ApplicationUpsert = Omit<Application, 'id'>;
 
+export interface ApplicationChangeEvent {
+  type: 'create' | 'update' | 'delete';
+  applicationId?: number;
+  vacancyId?: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class ApplicationService {
   private readonly baseUrl: string;
+  private readonly _applicationChanges$ = new Subject<ApplicationChangeEvent>();
+  public readonly applicationChanges$ = this._applicationChanges$.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -26,7 +34,9 @@ export class ApplicationService {
   }
 
   createApplication(request: ApplicationUpsert): Observable<Application> {
-    return this.http.post<Application>(this.baseUrl, request);
+    return this.http.post<Application>(this.baseUrl, request).pipe(
+      tap((app) => this._applicationChanges$.next({ type: 'create', applicationId: app.id, vacancyId: app.vacancyId }))
+    );
   }
 
   getApplicationById(id: number): Observable<Application> {
@@ -44,10 +54,14 @@ export class ApplicationService {
   }
 
   updateApplication(id: number, request: ApplicationUpsert): Observable<Application> {
-    return this.http.put<Application>(`${this.baseUrl}/${id}`, request);
+    return this.http.put<Application>(`${this.baseUrl}/${id}`, request).pipe(
+      tap((app) => this._applicationChanges$.next({ type: 'update', applicationId: app.id, vacancyId: app.vacancyId }))
+    );
   }
 
   deleteApplication(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/${id}`).pipe(
+      tap(() => this._applicationChanges$.next({ type: 'delete', applicationId: id }))
+    );
   }
 }

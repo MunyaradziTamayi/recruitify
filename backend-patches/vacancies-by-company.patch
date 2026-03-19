@@ -1,0 +1,65 @@
+﻿diff --git a/src/main/java/hit400/cleo/vacancy/controller/VacancyController.java b/src/main/java/hit400/cleo/vacancy/controller/VacancyController.java
+index 8ae8d73..d876aa7 100644
+--- a/src/main/java/hit400/cleo/vacancy/controller/VacancyController.java
++++ b/src/main/java/hit400/cleo/vacancy/controller/VacancyController.java
+@@ -32,8 +32,10 @@ public class VacancyController {
+     }
+ 
+     @GetMapping
+-    public Flux<VacancyResponse> getAll() {
+-        return vacancyService.getAll();
++    public Flux<VacancyResponse> getAll(@RequestParam(required = false) Integer companyId) {
++        return companyId != null
++                ? vacancyService.getByCompanyId(companyId)
++                : vacancyService.getAll();
+     }
+ 
+     @GetMapping("/recommended/{profileId}")
+diff --git a/src/main/java/hit400/cleo/vacancy/repository/VacancyRepository.java b/src/main/java/hit400/cleo/vacancy/repository/VacancyRepository.java
+index 755fc16..6af2256 100644
+--- a/src/main/java/hit400/cleo/vacancy/repository/VacancyRepository.java
++++ b/src/main/java/hit400/cleo/vacancy/repository/VacancyRepository.java
+@@ -11,6 +11,13 @@ public interface VacancyRepository extends R2dbcRepository<Vacancy, Long> {
+ 
+     Flux<Vacancy> findByCompanyId(Integer companyId);
+ 
++    @Query("""
++            SELECT * FROM vacancies
++            WHERE company_id = :companyId
++            ORDER BY posted_date DESC
++            """)
++    Flux<Vacancy> findByCompanyIdOrderByPostedDateDesc(Integer companyId);
++
+     Flux<Vacancy> findByStatus(String status);
+ 
+     Flux<Vacancy> findByCategory(String category);
+diff --git a/src/main/java/hit400/cleo/vacancy/services/VacancyService.java b/src/main/java/hit400/cleo/vacancy/services/VacancyService.java
+index 9f5421f..760cdd2 100644
+--- a/src/main/java/hit400/cleo/vacancy/services/VacancyService.java
++++ b/src/main/java/hit400/cleo/vacancy/services/VacancyService.java
+@@ -13,6 +13,8 @@ public interface VacancyService {
+ 
+     Flux<VacancyResponse> getAll();
+ 
++    Flux<VacancyResponse> getByCompanyId(Integer companyId);
++
+     Flux<VacancyResponse> getRecommended(Long profileId);
+ 
+     Mono<VacancyResponse> update(Long id, VacancyRequest request);
+diff --git a/src/main/java/hit400/cleo/vacancy/services/VacancyServiceImpl.java b/src/main/java/hit400/cleo/vacancy/services/VacancyServiceImpl.java
+index 3f98bb5..655f63c 100644
+--- a/src/main/java/hit400/cleo/vacancy/services/VacancyServiceImpl.java
++++ b/src/main/java/hit400/cleo/vacancy/services/VacancyServiceImpl.java
+@@ -52,6 +52,11 @@ public class VacancyServiceImpl implements VacancyService {
+         return vacancyRepository.findAll().map(this::toResponse);
+     }
+ 
++    @Override
++    public Flux<VacancyResponse> getByCompanyId(Integer companyId) {
++        return vacancyRepository.findByCompanyIdOrderByPostedDateDesc(companyId).map(this::toResponse);
++    }
++
+     @Override
+     public Flux<VacancyResponse> getRecommended(Long profileId) {
+         return candidateProfileRepository.findById(profileId)
+
