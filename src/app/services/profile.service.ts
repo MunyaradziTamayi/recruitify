@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@angular/core';
+﻿import { Inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -17,7 +17,7 @@ export class ProfileService {
   }
 
   createProfile(request: CandidateProfileRequest): Observable<CandidateProfile> {
-    return this.http.post<CandidateProfile>(this.baseUrl, request);
+    return this.http.post<CandidateProfile>(this.baseUrl + '/account', request);
   }
 
   getProfileById(id: number): Observable<CandidateProfile> {
@@ -47,3 +47,4 @@ export class ProfileService {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }
+

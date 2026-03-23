@@ -26,6 +26,16 @@ export class VacancyApplicants implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
 
+  private triggerViewUpdate(): void {
+    // In some setups (e.g., Zone-less or fetch-based async), async callbacks may not
+    // automatically trigger change detection. Force a local view refresh.
+    try {
+      this.cdr.detectChanges();
+    } catch {
+      // Ignore errors when the view is already destroyed/navigated away.
+    }
+  }
+
   ngOnInit(): void {
     this.route.queryParamMap
       .pipe(
@@ -50,11 +60,12 @@ export class VacancyApplicants implements OnInit {
             catchError((err) => {
               this.error = 'Failed to load applications. Make sure the backend is running on port 8080.';
               console.error(err);
+              this.triggerViewUpdate();
               return of([] as Application[]);
             }),
             finalize(() => {
               this.loading = false;
-              this.cdr.markForCheck();
+              this.triggerViewUpdate();
             }),
           );
         }),
@@ -63,7 +74,7 @@ export class VacancyApplicants implements OnInit {
       .subscribe((applications) => {
         this.applications = applications;
         this.loading = false;
-        this.cdr.markForCheck();
+        this.triggerViewUpdate();
       });
   }
 

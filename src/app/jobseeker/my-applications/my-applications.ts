@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -53,6 +53,7 @@ export class MyApplications implements OnInit {
     private applicationService: ApplicationService,
     private vacancyService: VacancyService,
     private companyService: CompanyService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -73,6 +74,16 @@ export class MyApplications implements OnInit {
     }
 
     this.loadApplications(candidateId);
+  }
+
+  private triggerViewUpdate(): void {
+    // In some setups (e.g., Zone-less async), the UI may not refresh after async work
+    // until the next user event. Force a local change-detection pass.
+    try {
+      this.cdr.detectChanges();
+    } catch {
+      // Ignore errors when navigating away / view destroyed.
+    }
   }
 
   getStatusClass(status: string): string {
@@ -107,6 +118,7 @@ export class MyApplications implements OnInit {
   private loadApplications(candidateId: number): void {
     this.isLoadingApplications = true;
     this.applicationsLoadError = null;
+    this.triggerViewUpdate();
 
     forkJoin({
       applications: this.applicationService.getApplications({ candidateId }),
@@ -148,14 +160,17 @@ export class MyApplications implements OnInit {
         }),
         catchError(() => {
           this.applicationsLoadError = 'Unable to load applications right now.';
+          this.triggerViewUpdate();
           return of([] as ApplicationRow[]);
         }),
         finalize(() => {
           this.isLoadingApplications = false;
+          this.triggerViewUpdate();
         }),
       )
       .subscribe((rows) => {
         this.applications = rows;
+        this.triggerViewUpdate();
       });
   }
 
