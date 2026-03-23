@@ -164,21 +164,20 @@ export class EmployeeDashboard implements OnInit {
   }
 
   filters = {
-    experienceLevel: [
-      { name: 'Entry level', count: 23, checked: false },
-      { name: 'Intermediate', count: 49, checked: false },
-      { name: 'Expert', count: 31, checked: true }
-    ],
-    jobLocation: 'Remotely',
-    jobType: [
-      { name: 'Full time', count: 72, checked: false },
-      { name: 'Part time', count: 24, checked: false }
-    ]
+    jobTitle: '',
+    keywords: '',
+    company: '',
+    location: '',
+    jobType: '',
   };
 
-  activeTags = ['Design', 'Expert', 'Remotely'];
+  activeTags: string[] = [];
+
+  availableLocations: string[] = [];
+  availableJobTypes: string[] = [];
 
   jobs: Job[] = [];
+  filteredJobs: Job[] = [];
   selectedJob: Job | null = null;
 
   selectJob(job: Job) {
@@ -189,8 +188,58 @@ export class EmployeeDashboard implements OnInit {
     job.isSaved = !job.isSaved;
   }
 
-  removeTag(tag: string) {
-    this.activeTags = this.activeTags.filter(t => t !== tag);
+  applyFilters(): void {
+    const jobTitle = this.normalize(this.filters.jobTitle);
+    const company = this.normalize(this.filters.company);
+    const location = this.normalize(this.filters.location);
+    const jobType = this.normalize(this.filters.jobType);
+    const keywordTokens = this.tokenize(this.filters.keywords);
+
+    this.filteredJobs = this.jobs.filter((job) => {
+      const titleText = this.normalize(job.title);
+      const companyText = this.normalize(job.company);
+      const locationText = this.normalize(job.location);
+      const typeText = this.normalize(job.type);
+
+      if (jobTitle && !titleText.includes(jobTitle)) return false;
+      if (company && !companyText.includes(company)) return false;
+      if (location && !locationText.includes(location)) return false;
+      if (jobType && typeText !== jobType) return false;
+
+      if (keywordTokens.length) {
+        const haystack = this.normalize(
+          `${job.title} ${job.company} ${job.location} ${job.type} ${job.description} ${(job.requirements ?? []).join(' ')}`,
+        );
+        if (!keywordTokens.every((t) => haystack.includes(t))) return false;
+      }
+
+      return true;
+    });
+
+    this.activeTags = [
+      this.filters.jobTitle,
+      this.filters.keywords,
+      this.filters.company,
+      this.filters.location,
+      this.filters.jobType,
+    ].map((v) => v.trim()).filter(Boolean);
+
+    this.selectedJob = this.filteredJobs.length ? this.filteredJobs[0] : null;
+    this.cdr.markForCheck();
+  }
+
+  clearFilters(): void {
+    this.filters = { jobTitle: '', keywords: '', company: '', location: '', jobType: '' };
+    this.applyFilters();
+  }
+
+  removeTag(tag: string): void {
+    if (this.filters.jobTitle.trim() === tag) this.filters.jobTitle = '';
+    if (this.filters.keywords.trim() === tag) this.filters.keywords = '';
+    if (this.filters.company.trim() === tag) this.filters.company = '';
+    if (this.filters.location.trim() === tag) this.filters.location = '';
+    if (this.filters.jobType.trim() === tag) this.filters.jobType = '';
+    this.applyFilters();
   }
 
   get savedJobsCount(): number {
@@ -247,7 +296,9 @@ export class EmployeeDashboard implements OnInit {
       )
       .subscribe((jobs) => {
         this.jobs = jobs;
-        this.selectedJob = this.jobs.length ? this.jobs[0] : null;
+        this.availableLocations = this.buildUniqueSorted(jobs.map((j) => j.location));
+        this.availableJobTypes = this.buildUniqueSorted(jobs.map((j) => j.type));
+        this.applyFilters();
         if (!this.vacanciesLoadError) {
           this.setLastSeenVacanciesAt(now);
         }
@@ -316,5 +367,22 @@ export class EmployeeDashboard implements OnInit {
 
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+  }
+
+  private normalize(value: unknown): string {
+    return typeof value === 'string' ? value.toLowerCase().trim() : '';
+  }
+
+  private tokenize(value: string): string[] {
+    return this.normalize(value).split(/[\s,]+/).filter(Boolean);
+  }
+
+  private buildUniqueSorted(values: Array<string | null | undefined>): string[] {
+    const set = new Set<string>();
+    for (const value of values) {
+      const normalized = typeof value === 'string' ? value.trim() : '';
+      if (normalized) set.add(normalized);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 }

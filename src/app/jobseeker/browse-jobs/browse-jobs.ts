@@ -44,7 +44,14 @@ export class BrowseJobs implements OnInit {
     imageUrl: ''
   };
 
-  searchQuery: string = '';
+  filters = {
+    jobTitle: '',
+    keywords: '',
+    company: '',
+    location: '',
+    jobType: '',
+  };
+
   selectedCategory: string = 'All';
   categories: string[] = ['All', 'Design', 'Development', 'Marketing', 'Sales', 'Management'];
 
@@ -52,8 +59,10 @@ export class BrowseJobs implements OnInit {
   vacanciesLoadError: string | null = null;
 
   jobs: Job[] = [];
-
   filteredJobs: Job[] = [];
+
+  availableLocations: string[] = [];
+  availableJobTypes: string[] = [];
 
   constructor(
     private router: Router,
@@ -78,12 +87,44 @@ export class BrowseJobs implements OnInit {
     this.loadJobs();
   }
 
-  filterJobs() {
-    this.filteredJobs = this.jobs.filter(job => {
-      const matchesSearch = job.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        job.company.toLowerCase().includes(this.searchQuery.toLowerCase());
-      const matchesCategory = this.selectedCategory === 'All' || job.tags.includes(this.selectedCategory);
-      return matchesSearch && matchesCategory;
+  onSearch(): void {
+    this.filterJobs();
+  }
+
+  clearFilters(): void {
+    this.filters = { jobTitle: '', keywords: '', company: '', location: '', jobType: '' };
+    this.selectedCategory = 'All';
+    this.filterJobs();
+  }
+
+  filterJobs(): void {
+    const jobTitle = this.normalize(this.filters.jobTitle);
+    const company = this.normalize(this.filters.company);
+    const location = this.normalize(this.filters.location);
+    const jobType = this.normalize(this.filters.jobType);
+    const keywordTokens = this.tokenize(this.filters.keywords);
+
+    this.filteredJobs = this.jobs.filter((job) => {
+      const titleText = this.normalize(job.title);
+      const companyText = this.normalize(job.company);
+      const locationText = this.normalize(job.location);
+      const typeText = this.normalize(job.type);
+
+      if (jobTitle && !titleText.includes(jobTitle)) return false;
+      if (company && !companyText.includes(company)) return false;
+      if (location && !locationText.includes(location)) return false;
+      if (jobType && typeText !== jobType) return false;
+
+      if (keywordTokens.length) {
+        const haystack = this.normalize(
+          `${job.title} ${job.company} ${job.location} ${job.type} ${job.description} ${(job.tags ?? []).join(' ')}`,
+        );
+        if (!keywordTokens.every((t) => haystack.includes(t))) return false;
+      }
+
+      const matchesCategory =
+        this.selectedCategory === 'All' || (job.tags ?? []).includes(this.selectedCategory);
+      return matchesCategory;
     });
   }
 
@@ -127,6 +168,8 @@ export class BrowseJobs implements OnInit {
       )
       .subscribe((jobs) => {
         this.jobs = jobs;
+        this.availableLocations = this.buildUniqueSorted(jobs.map((j) => j.location));
+        this.availableJobTypes = this.buildUniqueSorted(jobs.map((j) => j.type));
         this.filterJobs();
         this.cdr.markForCheck();
       });
@@ -198,5 +241,22 @@ export class BrowseJobs implements OnInit {
 
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+  }
+
+  private normalize(value: unknown): string {
+    return typeof value === 'string' ? value.toLowerCase().trim() : '';
+  }
+
+  private tokenize(value: string): string[] {
+    return this.normalize(value).split(/[\s,]+/).filter(Boolean);
+  }
+
+  private buildUniqueSorted(values: Array<string | null | undefined>): string[] {
+    const set = new Set<string>();
+    for (const value of values) {
+      const normalized = typeof value === 'string' ? value.trim() : '';
+      if (normalized) set.add(normalized);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 }

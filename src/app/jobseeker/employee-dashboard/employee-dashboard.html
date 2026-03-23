@@ -161,35 +161,64 @@
                     <div class="card border-0 shadow-sm">
                         <div class="card-body p-4">
                             <div class="row g-3">
-                                <div class="col-md-5">
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0">
+                                            <i class="bi bi-briefcase"></i>
+                                        </span>
+                                        <input type="text" class="form-control border-start-0"
+                                            [(ngModel)]="filters.jobTitle" (ngModelChange)="applyFilters()"
+                                            (keyup.enter)="applyFilters()" placeholder="Job title">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0">
+                                            <i class="bi bi-building"></i>
+                                        </span>
+                                        <input type="text" class="form-control border-start-0"
+                                            [(ngModel)]="filters.company" (ngModelChange)="applyFilters()"
+                                            (keyup.enter)="applyFilters()" placeholder="Company">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
                                     <div class="input-group">
                                         <span class="input-group-text bg-white border-end-0">
                                             <i class="bi bi-search"></i>
                                         </span>
                                         <input type="text" class="form-control border-start-0"
-                                            placeholder="Search jobs by title, company, or keyword...">
+                                            [(ngModel)]="filters.keywords" (ngModelChange)="applyFilters()"
+                                            (keyup.enter)="applyFilters()" placeholder="Keywords">
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-5">
                                     <div class="input-group">
                                         <span class="input-group-text bg-white border-end-0">
                                             <i class="bi bi-geo-alt"></i>
                                         </span>
-                                        <input type="text" class="form-control border-start-0" placeholder="Location">
+                                        <input type="text" class="form-control border-start-0"
+                                            [(ngModel)]="filters.location" (ngModelChange)="applyFilters()"
+                                            (keyup.enter)="applyFilters()" placeholder="Location" list="employeeDashboardLocations">
+                                        <datalist id="employeeDashboardLocations">
+                                            <option *ngFor="let loc of availableLocations" [value]="loc"></option>
+                                        </datalist>
                                     </div>
                                 </div>
-                                <div class="col-md-2">
-                                    <select class="form-select">
-                                        <option selected>Job Type</option>
-                                        <option>Full-time</option>
-                                        <option>Part-time</option>
-                                        <option>Contract</option>
-                                        <option>Remote</option>
+                                <div class="col-md-3">
+                                    <select class="form-select" [(ngModel)]="filters.jobType"
+                                        (ngModelChange)="applyFilters()">
+                                        <option value="">Any job type</option>
+                                        <option *ngFor="let type of availableJobTypes" [value]="type">{{ type }}</option>
                                     </select>
                                 </div>
-                                <div class="col-md-2">
-                                    <button class="btn btn-primary w-100">
+                                <div class="col-md-2 d-grid">
+                                    <button type="button" class="btn btn-primary w-100" (click)="applyFilters()">
                                         <i class="bi bi-search me-2"></i>Search
+                                    </button>
+                                </div>
+                                <div class="col-md-2 d-grid">
+                                    <button type="button" class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+                                        Clear
                                     </button>
                                 </div>
                             </div>
@@ -223,11 +252,11 @@
                         <div class="card-body p-0">
                             <div class="p-3 text-muted" *ngIf="isLoadingVacancies">Loading vacancies...</div>
                             <div class="alert alert-warning m-3" *ngIf="vacanciesLoadError">{{ vacanciesLoadError }}</div>
-                            <div class="p-3 text-muted" *ngIf="!isLoadingVacancies && !vacanciesLoadError && jobs.length === 0">
-                                No vacancies available right now.
+                            <div class="p-3 text-muted" *ngIf="!isLoadingVacancies && !vacanciesLoadError && filteredJobs.length === 0">
+                                No matching vacancies found.
                             </div>
                             <div class="job-list" *ngIf="!isLoadingVacancies && !vacanciesLoadError">
-                                <div *ngFor="let job of jobs" class="job-item p-4 border-bottom cursor-pointer"
+                                <div *ngFor="let job of filteredJobs" class="job-item p-4 border-bottom cursor-pointer"
                                     [class.selected-job]="selectedJob?.id === job.id" (click)="selectJob(job)">
                                     <div class="d-flex gap-3">
                                         <div class="company-logo bg-light rounded d-flex align-items-center justify-content-center"

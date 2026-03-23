@@ -57,17 +57,46 @@
                 <div class="search-box-container mx-auto mt-5 col-lg-8">
                     <div class="card border-0 shadow-lg p-3 search-card">
                         <div class="row g-2">
-                            <div class="col-md-9">
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0"><i
-                                            class="bi bi-search"></i></span>
-                                    <input type="text" class="form-control border-start-0 py-3"
-                                        [(ngModel)]="searchQuery" (ngModelChange)="filterJobs()"
-                                        placeholder="Job title, keywords, or company...">
-                                </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control py-3" [(ngModel)]="filters.jobTitle"
+                                    (ngModelChange)="filterJobs()" (keyup.enter)="onSearch()"
+                                    placeholder="Job title">
                             </div>
-                            <div class="col-md-3">
-                                <button class="btn btn-primary w-100 h-100 fw-bold">Search Jobs</button>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control py-3" [(ngModel)]="filters.keywords"
+                                    (ngModelChange)="filterJobs()" (keyup.enter)="onSearch()"
+                                    placeholder="Keywords">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control py-3" [(ngModel)]="filters.company"
+                                    (ngModelChange)="filterJobs()" (keyup.enter)="onSearch()"
+                                    placeholder="Company">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" class="form-control py-3" [(ngModel)]="filters.location"
+                                    (ngModelChange)="filterJobs()" (keyup.enter)="onSearch()"
+                                    placeholder="Location" list="browseJobsLocations">
+                                <datalist id="browseJobsLocations">
+                                    <option *ngFor="let loc of availableLocations" [value]="loc"></option>
+                                </datalist>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select py-3" [(ngModel)]="filters.jobType"
+                                    (ngModelChange)="filterJobs()">
+                                    <option value="">Any job type</option>
+                                    <option *ngFor="let type of availableJobTypes" [value]="type">{{ type }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-grid">
+                                <button type="button" class="btn btn-primary fw-bold py-3" (click)="onSearch()">
+                                    Search Jobs
+                                </button>
+                            </div>
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="button" class="btn btn-link text-decoration-none p-0"
+                                    (click)="clearFilters()">
+                                    Clear filters
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -168,9 +197,7 @@
                         </div>
                         <h4 class="fw-bold">No jobs found</h4>
                         <p class="text-muted">Try adjusting your search or filters to find what you're looking for.</p>
-                        <button class="btn btn-primary mt-3"
-                            (click)="searchQuery = ''; selectedCategory = 'All'; filterJobs()">Clear All
-                            Filters</button>
+                        <button class="btn btn-primary mt-3" (click)="clearFilters()">Clear All Filters</button>
                     </div>
                 </div>
             </div>
