@@ -179,9 +179,21 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <button class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
+                                                <div class="d-flex gap-2">
+                                                    <button class="btn btn-sm btn-outline-primary"
+                                                        (click)="selectVacancyForApplicants(vacancy)">
+                                                        <i class="bi bi-people"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger"
+                                                        [disabled]="closingVacancyIds.has(vacancy.id)"
+                                                        (click)="closeVacancy(vacancy)">
+                                                        <span *ngIf="closingVacancyIds.has(vacancy.id)"
+                                                            class="spinner-border spinner-border-sm"></span>
+                                                        <span *ngIf="!closingVacancyIds.has(vacancy.id)">
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </span>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -231,8 +243,70 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="card border-0 shadow-sm mt-4">
+                        <div class="card-header bg-white border-bottom">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Applicants for {{ selectedVacancyTitle || 'Vacancy' }}</h5>
+                                <a routerLink="/applicants"
+                                    [queryParams]="{ vacancyId: selectedVacancyId }"
+                                    class="text-primary small">View All</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-danger small mb-2" *ngIf="closeError">{{ closeError }}</div>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Select vacancy</label>
+                                <select class="form-select" [(ngModel)]="selectedVacancyId" (ngModelChange)="onVacancySelectionChange()">
+                                    <option [ngValue]="null">All vacancies</option>
+                                    <option *ngFor="let v of companyVacancies" [ngValue]="v.id">{{ v.title }}</option>
+                                </select>
+                            </div>
+                            <div class="text-muted small" *ngIf="vacancyApplicants.length === 0">
+                                No applicants yet.
+                            </div>
+                            <div *ngFor="let applicant of vacancyApplicants" class="application-item">
+                                <div class="d-flex align-items-center mb-3">
+                                    <img [src]="applicant.avatar" alt="{{ applicant.name }}" class="rounded-circle me-3"
+                                        style="width: 40px; height: 40px;">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-0 fw-bold">{{ applicant.name }}</p>
+                                        <small class="text-muted">{{ applicant.position }}</small>
+                                    </div>
+                                    <span class="badge" [ngClass]="getStatusClass(applicant.status)">
+                                        {{ getStatusText(applicant.status) }}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center ps-5">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock me-1"></i>{{ applicant.appliedDate }}
+                                    </small>
+                                </div>
+                                <hr class="my-3"
+                                    *ngIf="applicant !== vacancyApplicants[vacancyApplicants.length - 1]">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
+</div>
+
+<!-- Vacancy Close Success Modal -->
+<div class="modal fade" id="vacancyCloseSuccessModal" tabindex="-1" aria-labelledby="vacancyCloseSuccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="vacancyCloseSuccessModalLabel">Vacancy Closed</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">{{ closeSuccess || 'The vacancy has been closed successfully.' }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>

@@ -121,7 +121,7 @@ export class MyApplications implements OnInit {
     this.triggerViewUpdate();
 
     forkJoin({
-      applications: this.applicationService.getApplications({ candidateId }),
+      applications: this.applicationService.getApplicationsForCandidate(candidateId),
       vacancies: this.vacancyService.getVacancies().pipe(catchError(() => of([] as Vacancy[]))),
       companies: this.companyService.getCompanies().pipe(catchError(() => of([] as Company[]))),
     })

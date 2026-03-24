@@ -1,27 +1,60 @@
 import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
 import { Application } from '../../models/application.model';
 import { ApplicationService } from '../../services/application.service';
+import { VacancyService } from '../../services/vacancy.service';
+import { CompanyStoreService } from '../../services/company-store.service';
+import { AuthSessionService } from '../../auth/auth-session.service';
+import { Vacancy } from '../../models/vacancy.model';
+import { CvExtractionService } from '../../services/cv-extraction.service';
+import { InterviewService } from '../../services/interview.service';
+import { InterviewUpsert } from '../../services/interview.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { distinctUntilChanged, map, of, switchMap, tap } from 'rxjs';
+import { distinctUntilChanged, forkJoin, map, of, switchMap, tap, EMPTY } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-vacancy-applicants',
   standalone: true,
-  imports: [CommonModule, RouterModule, RecruiterAccount],
+  imports: [CommonModule, FormsModule, RouterModule, RecruiterAccount],
   templateUrl: './vacancy-applicants.html',
   styleUrl: './vacancy-applicants.css',
 })
 export class VacancyApplicants implements OnInit {
   applications: Application[] = [];
+  vacancies: Vacancy[] = [];
+  selectedVacancyId: number | null = null;
+  selectedApplicant: Application | null = null;
+  interviewForm: InterviewUpsert = {
+    applicationId: 0,
+    candidateId: 0,
+    candidateName: '',
+    candidateAvatar: '',
+    position: '',
+    date: '',
+    time: '',
+    type: 'Virtual',
+    status: 'Upcoming',
+    meetingLink: '',
+    location: '',
+    notes: '',
+  };
+  interviewError: string | null = null;
+  interviewSuccess: string | null = null;
+  scheduling = false;
   loading = false;
   error: string | null = null;
   infoMessage: string | null = null;
 
   private readonly applicationService = inject(ApplicationService);
+  private readonly vacancyService = inject(VacancyService);
+  private readonly companyStore = inject(CompanyStoreService);
+  private readonly authSession = inject(AuthSessionService);
+  private readonly cvService = inject(CvExtractionService);
+  private readonly interviewService = inject(InterviewService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -37,6 +70,39 @@ export class VacancyApplicants implements OnInit {
   }
 
   ngOnInit(): void {
+    const loggedInUser = this.authSession.getLoggedInUser();
+    if (!loggedInUser) {
+      this.infoMessage = 'Please log in to view applicants.';
+      return;
+    }
+
+    const userId = this.authSession.getUserId(loggedInUser);
+    if (!userId) {
+      this.infoMessage = 'Unable to load recruiter profile.';
+      return;
+    }
+
+    this.companyStore
+      .getCompanyForUser(userId)
+      .pipe(
+        switchMap((company) => {
+          if (!company?.id) return EMPTY;
+          return this.vacancyService.getVacanciesForCompany(company.id, { refresh: true });
+        }),
+        catchError(() => {
+          this.error = 'Failed to load vacancies.';
+          return of([] as Vacancy[]);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((vacancies) => {
+        this.vacancies = vacancies ?? [];
+        if (this.selectedVacancyId == null) {
+          this.onVacancySelectionChange();
+        }
+        this.cdr.markForCheck();
+      });
+
     this.route.queryParamMap
       .pipe(
         map((params) => {
@@ -48,15 +114,25 @@ export class VacancyApplicants implements OnInit {
         distinctUntilChanged(),
         tap((vacancyId) => {
           this.error = null;
-          this.infoMessage = vacancyId == null ? 'Select a vacancy to view its applicants.' : null;
-          this.applications = vacancyId == null ? [] : this.applications;
-          this.loading = vacancyId != null;
+          this.selectedVacancyId = vacancyId;
+          this.infoMessage = vacancyId == null ? 'Showing applicants for all vacancies.' : null;
+          this.loading = true;
           this.cdr.markForCheck();
         }),
         switchMap((vacancyId) => {
-          if (vacancyId == null) return of([] as Application[]);
+          const vacancyIds =
+            vacancyId != null
+              ? [vacancyId]
+              : this.vacancies.map((v) => v.id).filter((id): id is number => typeof id === 'number');
 
-          return this.applicationService.getApplications({ vacancyId }).pipe(
+          if (!vacancyIds.length) return of([] as Application[]);
+
+          return forkJoin(
+            vacancyIds.map((id) =>
+              this.applicationService.getApplicationsForVacancy(id).pipe(catchError(() => of([] as Application[]))),
+            ),
+          ).pipe(
+            map((results) => results.flat()),
             catchError((err) => {
               this.error = 'Failed to load applications. Make sure the backend is running on port 8080.';
               console.error(err);
@@ -76,6 +152,134 @@ export class VacancyApplicants implements OnInit {
         this.loading = false;
         this.triggerViewUpdate();
       });
+  }
+
+  onVacancySelectionChange(): void {
+    this.loading = true;
+    this.error = null;
+    this.infoMessage = this.selectedVacancyId == null ? 'Showing applicants for all vacancies.' : null;
+    this.cdr.markForCheck();
+
+    const vacancyIds =
+      this.selectedVacancyId != null
+        ? [this.selectedVacancyId]
+        : this.vacancies.map((v) => v.id).filter((id): id is number => typeof id === 'number');
+
+    if (!vacancyIds.length) {
+      this.applications = [];
+      this.loading = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    forkJoin(
+      vacancyIds.map((id) =>
+        this.applicationService.getApplicationsForVacancy(id).pipe(catchError(() => of([] as Application[]))),
+      ),
+    )
+      .pipe(
+        map((results) => results.flat()),
+        catchError((err) => {
+          this.error = 'Failed to load applications. Make sure the backend is running on port 8080.';
+          console.error(err);
+          return of([] as Application[]);
+        }),
+        finalize(() => {
+          this.loading = false;
+          this.triggerViewUpdate();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((applications) => {
+        this.applications = applications;
+        this.triggerViewUpdate();
+      });
+  }
+
+  viewCv(app: Application): void {
+    if (!app.candidateId) return;
+    this.cvService.viewCvPdf(app.candidateId).subscribe({
+      next: (blob) => {
+        const fileUrl = URL.createObjectURL(blob);
+        window.open(fileUrl, '_blank');
+      },
+      error: () => {
+        this.error = 'Unable to load CV. Please try again.';
+        this.triggerViewUpdate();
+      },
+    });
+  }
+
+  openInterviewModal(app: Application): void {
+    this.selectedApplicant = app;
+    this.interviewError = null;
+    this.interviewSuccess = null;
+    this.interviewForm = {
+      applicationId: app.id ?? 0,
+      candidateId: app.candidateId,
+      candidateName: app.candidateName,
+      candidateAvatar: app.candidateAvatar ?? '',
+      position: app.position,
+      date: '',
+      time: '',
+      type: 'Virtual',
+      status: 'Upcoming',
+      meetingLink: '',
+      location: '',
+      notes: '',
+    };
+  }
+
+  submitInterview(): void {
+    if (!this.selectedApplicant) return;
+    if (!this.interviewForm.date || !this.interviewForm.time) {
+      this.interviewError = 'Date and time are required.';
+      return;
+    }
+    if (this.interviewForm.type === 'Virtual' && !this.interviewForm.meetingLink) {
+      this.interviewError = 'Meeting link is required for online interviews.';
+      return;
+    }
+    if (this.interviewForm.type === 'In-person' && !this.interviewForm.location) {
+      this.interviewError = 'Location is required for physical interviews.';
+      return;
+    }
+
+    this.scheduling = true;
+    this.interviewError = null;
+
+    this.interviewService.createInterview(this.interviewForm).pipe(
+      finalize(() => {
+        this.scheduling = false;
+        this.triggerViewUpdate();
+      }),
+    ).subscribe({
+      next: () => {
+        this.interviewSuccess = 'Interview scheduled successfully.';
+        this.openModal('interviewSuccessModal');
+        this.closeModal('scheduleInterviewModal');
+      },
+      error: () => {
+        this.interviewError = 'Failed to schedule interview.';
+      },
+    });
+  }
+
+  private openModal(id: string): void {
+    const modalEl = document.getElementById(id);
+    if (!modalEl) return;
+    const bootstrap = (window as any)?.bootstrap;
+    if (!bootstrap?.Modal) return;
+    const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
+    instance.show();
+  }
+
+  private closeModal(id: string): void {
+    const modalEl = document.getElementById(id);
+    if (!modalEl) return;
+    const bootstrap = (window as any)?.bootstrap;
+    const instance = bootstrap?.Modal?.getInstance(modalEl);
+    if (instance) instance.hide();
   }
 
   getStatusClass(status: string): string {

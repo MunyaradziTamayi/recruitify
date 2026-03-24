@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthSessionService } from '../../auth/auth-session.service';
 import { RecruiterAccount } from '../shared/recruiter-account/recruiter-account';
@@ -10,6 +11,7 @@ import { CompanyStoreService } from '../../services/company-store.service';
 import { forkJoin, of, EMPTY } from 'rxjs';
 import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Application } from '../../models/application.model';
 
 interface DashboardStats {
   totalVacancies: number;
@@ -26,7 +28,7 @@ interface Vacancy {
   type: string;
   postedDate: string;
   applicants: number;
-  status: 'active' | 'closed' | 'draft' | 'Active' | 'Closed' | 'Draft' | 'Archived';
+  status: 'active' | 'closed' | 'draft' | 'Active' | 'Closed' | 'Draft' | 'Archived' | 'OPEN' | 'open';
 }
 
 interface Applicant {
@@ -48,7 +50,7 @@ interface RecruiterProfile {
 @Component({
   selector: 'app-employer-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, RecruiterAccount],
+  imports: [CommonModule, FormsModule, RouterModule, RecruiterAccount],
   templateUrl: './employer-dashboard.html',
   styleUrl: './employer-dashboard.css',
 })
@@ -77,6 +79,14 @@ export class EmployerDashboard implements OnInit {
 
   recentVacancies: Vacancy[] = [];
   recentApplications: Applicant[] = [];
+  companyApplications: Application[] = [];
+  companyVacancies: Vacancy[] = [];
+  selectedVacancyId: number | null = null;
+  selectedVacancyTitle = '';
+  vacancyApplicants: Applicant[] = [];
+  closeError: string | null = null;
+  closeSuccess: string | null = null;
+  closingVacancyIds = new Set<number>();
 
   constructor(
     private router: Router,
@@ -130,6 +140,7 @@ export class EmployerDashboard implements OnInit {
       .subscribe((data) => {
       const companyVacancyIds = new Set(data.vacancies.map(v => v.id));
       const companyApplications = data.applications.filter(app => companyVacancyIds.has(app.vacancyId));
+      this.companyApplications = companyApplications;
       
       this.stats = {
         totalVacancies: data.vacancies.length,
@@ -142,6 +153,17 @@ export class EmployerDashboard implements OnInit {
           return appliedDate.getMonth() === now.getMonth() && appliedDate.getFullYear() === now.getFullYear();
         }).length
       };
+
+      this.companyVacancies = (data.vacancies ?? []).map((v) => ({
+        id: v.id ?? 0,
+        title: v.title,
+        department: v.category,
+        location: v.location,
+        type: v.employmentType,
+        postedDate: v.postedDate,
+        applicants: v.applicantCount,
+        status: v.status,
+      }));
 
       this.recentVacancies = data.vacancies
         .sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime())
@@ -169,6 +191,7 @@ export class EmployerDashboard implements OnInit {
           avatar: app.candidateAvatar || 'https://i.pravatar.cc/150?img=5'
         }));
 
+      this.syncSelectedVacancy(this.companyVacancies);
       this.cdr.markForCheck();
     });
 
@@ -191,6 +214,7 @@ export class EmployerDashboard implements OnInit {
       .subscribe((data) => {
         const companyVacancyIds = new Set(data.vacancies.map((v) => v.id));
         const companyApplications = data.applications.filter((app) => companyVacancyIds.has(app.vacancyId));
+        this.companyApplications = companyApplications;
 
         this.stats = {
           totalVacancies: data.vacancies.length,
@@ -204,6 +228,17 @@ export class EmployerDashboard implements OnInit {
             return appliedDate.getMonth() === now.getMonth() && appliedDate.getFullYear() === now.getFullYear();
           }).length,
         };
+
+        this.companyVacancies = (data.vacancies ?? []).map((v) => ({
+          id: v.id ?? 0,
+          title: v.title,
+          department: v.category,
+          location: v.location,
+          type: v.employmentType,
+          postedDate: v.postedDate,
+          applicants: v.applicantCount,
+          status: v.status,
+        }));
 
         this.recentVacancies = data.vacancies
           .sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime())
@@ -231,6 +266,7 @@ export class EmployerDashboard implements OnInit {
             avatar: app.candidateAvatar || 'https://i.pravatar.cc/150?img=5',
           }));
 
+        this.syncSelectedVacancy(this.companyVacancies);
         this.cdr.markForCheck();
       });
 
@@ -248,6 +284,7 @@ export class EmployerDashboard implements OnInit {
       .subscribe((data) => {
         const companyVacancyIds = new Set(data.vacancies.map((v) => v.id));
         const companyApplications = data.applications.filter((app) => companyVacancyIds.has(app.vacancyId));
+        this.companyApplications = companyApplications;
 
         this.stats = {
           totalVacancies: data.vacancies.length,
@@ -261,6 +298,17 @@ export class EmployerDashboard implements OnInit {
             return appliedDate.getMonth() === now.getMonth() && appliedDate.getFullYear() === now.getFullYear();
           }).length,
         };
+
+        this.companyVacancies = (data.vacancies ?? []).map((v) => ({
+          id: v.id ?? 0,
+          title: v.title,
+          department: v.category,
+          location: v.location,
+          type: v.employmentType,
+          postedDate: v.postedDate,
+          applicants: v.applicantCount,
+          status: v.status,
+        }));
 
         this.recentVacancies = data.vacancies
           .sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime())
@@ -288,8 +336,110 @@ export class EmployerDashboard implements OnInit {
             avatar: app.candidateAvatar || 'https://i.pravatar.cc/150?img=5',
           }));
 
+        this.syncSelectedVacancy(this.companyVacancies);
         this.cdr.markForCheck();
       });
+  }
+
+  selectVacancyForApplicants(vacancy: Vacancy): void {
+    this.selectedVacancyId = vacancy.id;
+    this.selectedVacancyTitle = vacancy.title;
+    this.refreshVacancyApplicants();
+  }
+
+  onVacancySelectionChange(): void {
+    const vacancy =
+      this.selectedVacancyId != null
+        ? this.companyVacancies.find((v) => v.id === this.selectedVacancyId)
+        : null;
+    this.selectedVacancyTitle = vacancy?.title ?? 'All Vacancies';
+    this.refreshVacancyApplicants();
+  }
+
+  closeVacancy(vacancy: Vacancy): void {
+    if (!vacancy?.id || this.closingVacancyIds.has(vacancy.id)) return;
+    if (!confirm(`Close vacancy "${vacancy.title}"?`)) return;
+
+    this.closeError = null;
+    this.closeSuccess = null;
+    this.closingVacancyIds.add(vacancy.id);
+    this.vacancyService.closeVacancy(vacancy.id).pipe(
+      tap(() => this.cdr.markForCheck()),
+      catchError(() => {
+        this.closeError = 'Failed to close vacancy. Please try again.';
+        return of(null);
+      }),
+      tap(() => {
+        this.closingVacancyIds.delete(vacancy.id);
+        if (!this.closeError) {
+          this.closeSuccess = `Vacancy "${vacancy.title}" has been closed.`;
+          this.openModal('vacancyCloseSuccessModal');
+        }
+        this.cdr.markForCheck();
+      }),
+    ).subscribe();
+  }
+
+  private syncSelectedVacancy(vacancies: Array<{ id?: number; title: string }>): void {
+    if (!vacancies.length) {
+      this.selectedVacancyId = null;
+      this.selectedVacancyTitle = '';
+      this.vacancyApplicants = [];
+      return;
+    }
+
+    if (this.selectedVacancyId != null) {
+      const match = vacancies.find((v) => v.id === this.selectedVacancyId);
+      if (!match) {
+        this.selectedVacancyId = null;
+        this.selectedVacancyTitle = 'All Vacancies';
+      } else {
+        this.selectedVacancyTitle = match.title;
+      }
+    } else {
+      this.selectedVacancyTitle = 'All Vacancies';
+    }
+
+    this.refreshVacancyApplicants();
+  }
+
+  private refreshVacancyApplicants(): void {
+    const vacancyIds = this.selectedVacancyId != null
+      ? [this.selectedVacancyId]
+      : this.companyVacancies.map((v) => v.id).filter((id): id is number => typeof id === 'number');
+
+    if (!vacancyIds.length) {
+      this.vacancyApplicants = [];
+      return;
+    }
+
+    forkJoin(
+      vacancyIds.map((id) =>
+        this.applicationService.getApplicationsForVacancy(id).pipe(catchError(() => of([] as Application[]))),
+      ),
+    ).subscribe((results) => {
+      const apps = results.flat();
+      this.vacancyApplicants = apps
+        .sort((a, b) => new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime())
+        .map((app) => ({
+          id: app.id ?? 0,
+          name: app.candidateName,
+          position: app.position,
+          appliedDate: this.formatRelativeTime(new Date(app.appliedDate)),
+          status: app.status as any,
+          avatar: app.candidateAvatar || 'https://i.pravatar.cc/150?img=5',
+        }));
+      this.cdr.markForCheck();
+    });
+  }
+
+  private openModal(id: string): void {
+    const modalEl = document.getElementById(id);
+    if (!modalEl) return;
+    const bootstrap = (window as any)?.bootstrap;
+    if (!bootstrap?.Modal) return;
+    const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
+    instance.show();
   }
 
   private loadDashboard(companyId: number, recruiterId: number | null) {

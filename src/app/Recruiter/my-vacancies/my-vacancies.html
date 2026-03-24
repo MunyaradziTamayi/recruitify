@@ -129,11 +129,27 @@
                                                 routerLink="/applicants" [queryParams]="{ vacancyId: vacancy.id }">
                                                 <i class="bi bi-people"></i>
                                             </button>
-                                            <button class="btn btn-action btn-outline-info" title="Edit">
+                                            <button class="btn btn-action btn-outline-danger" title="Close Vacancy"
+                                                [disabled]="vacancy.id == null || closingVacancyIds.has(vacancy.id != null ? vacancy.id : -1)"
+                                                (click)="vacancy.id != null && closeVacancy(vacancy)">
+                                                <span *ngIf="closingVacancyIds.has(vacancy.id != null ? vacancy.id : -1)"
+                                                    class="spinner-border spinner-border-sm"></span>
+                                                <span *ngIf="!closingVacancyIds.has(vacancy.id != null ? vacancy.id : -1)">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </span>
+                                            </button>
+                                            <button class="btn btn-action btn-outline-info" title="Edit"
+                                                (click)="openEditModal(vacancy)" data-bs-toggle="modal" data-bs-target="#editVacancyModal">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <button class="btn btn-action btn-outline-danger" title="Delete">
-                                                <i class="bi bi-trash"></i>
+                                            <button class="btn btn-action btn-outline-danger" title="Delete"
+                                                [disabled]="vacancy.id == null || deletingVacancyIds.has(vacancy.id != null ? vacancy.id : -1)"
+                                                (click)="vacancy.id != null && deleteVacancy(vacancy)">
+                                                <span *ngIf="deletingVacancyIds.has(vacancy.id != null ? vacancy.id : -1)"
+                                                    class="spinner-border spinner-border-sm"></span>
+                                                <span *ngIf="!deletingVacancyIds.has(vacancy.id != null ? vacancy.id : -1)">
+                                                    <i class="bi bi-trash"></i>
+                                                </span>
                                             </button>
                                         </div>
                                     </td>
@@ -155,4 +171,137 @@
             </div>
         </div>
     </main>
+</div>
+
+<!-- Edit Vacancy Modal -->
+<div class="modal fade" id="editVacancyModal" tabindex="-1" aria-labelledby="editVacancyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editVacancyModalLabel">Edit Vacancy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" *ngIf="editModel">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Title</label>
+                        <input class="form-control" [(ngModel)]="editModel.title">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Category</label>
+                        <input class="form-control" [(ngModel)]="editModel.category">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Location</label>
+                        <input class="form-control" [(ngModel)]="editModel.location">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Employment Type</label>
+                        <select class="form-select" [(ngModel)]="editModel.employmentType">
+                            <option value="Full-time">Full-time</option>
+                            <option value="Part-time">Part-time</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Freelance">Freelance</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Salary Min</label>
+                        <input type="number" class="form-control" [(ngModel)]="editModel.salaryRange.min">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Salary Max</label>
+                        <input type="number" class="form-control" [(ngModel)]="editModel.salaryRange.max">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Currency</label>
+                        <input class="form-control" [(ngModel)]="editModel.salaryRange.currency">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" [(ngModel)]="editModel.status">
+                            <option value="Active">Active</option>
+                            <option value="Closed">Closed</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Archived">Archived</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Closing Date</label>
+                        <input type="date" class="form-control" [(ngModel)]="editModel.closingDate">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" rows="3" [(ngModel)]="editModel.description"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Requirements (comma separated)</label>
+                        <input class="form-control" [(ngModel)]="editRequirementsText">
+                    </div>
+                </div>
+                <div *ngIf="editError" class="text-danger small mt-3">{{ editError }}</div>
+                <div *ngIf="editSuccess" class="text-success small mt-3">{{ editSuccess }}</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="saveEdit()" [disabled]="saving">
+                    <span *ngIf="saving" class="spinner-border spinner-border-sm me-2"></span>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Success Modal -->
+<div class="modal fade" id="editVacancySuccessModal" tabindex="-1" aria-labelledby="editVacancySuccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editVacancySuccessModalLabel">Vacancy Updated</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">{{ editSuccess || 'Vacancy updated successfully.' }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Close Success Modal -->
+<div class="modal fade" id="closeVacancySuccessModal" tabindex="-1" aria-labelledby="closeVacancySuccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="closeVacancySuccessModalLabel">Vacancy Closed</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">{{ closeSuccess || 'Vacancy closed successfully.' }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Success Modal -->
+<div class="modal fade" id="deleteVacancySuccessModal" tabindex="-1" aria-labelledby="deleteVacancySuccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteVacancySuccessModalLabel">Vacancy Deleted</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">{{ deleteSuccess || 'Vacancy deleted successfully.' }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>

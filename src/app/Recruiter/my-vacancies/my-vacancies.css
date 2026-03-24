@@ -99,6 +99,11 @@
     vertical-align: middle;
 }
 
+.table thead th:last-child,
+.table tbody td:last-child {
+    min-width: 180px;
+}
+
 .badge {
     padding: 0.5em 0.8em;
     font-weight: 500;

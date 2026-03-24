@@ -9,9 +9,10 @@ import { VacancyService } from '../../services/vacancy.service';
 import { CompanyService } from '../../services/company.service';
 import { ApplicationService } from '../../services/application.service';
 import { InterviewService } from '../../services/interview.service';
+import { ProfileService } from '../../services/profile.service';
+import { CandidateProfile } from '../../models/profile.model';
 import { Vacancy } from '../../models/vacancy.model';
 import { Company } from '../../models/company.model';
-import { ApplicationUpsert } from '../../services/application.service';
 
 interface Job {
   id: number;
@@ -20,6 +21,7 @@ interface Job {
   location: string;
   logo: string;
   timePosted: string;
+  postedAt: Date | null;
   type: string;
   applicants: number;
   isVerified: boolean;
@@ -66,7 +68,8 @@ export class EmployeeDashboard implements OnInit {
   applyingJobIds = new Set<number>();
   appliedJobIds = new Set<number>();
 
-  private candidateId: number | null = null;
+  candidateId: number | null = null;
+  profile: CandidateProfile | null = null;
 
   constructor(
     private router: Router,
@@ -74,6 +77,7 @@ export class EmployeeDashboard implements OnInit {
     private companyService: CompanyService,
     private applicationService: ApplicationService,
     private interviewService: InterviewService,
+    private profileService: ProfileService,
   ) { }
 
   ngOnInit(): void {
@@ -88,10 +92,12 @@ export class EmployeeDashboard implements OnInit {
         imageUrl: googleUser.picture || 'https://i.pravatar.cc/150?img=1'
       };
 
-      this.candidateId = googleUser.profileId;
+      const parsedCandidateId = Number(googleUser.profileId);
+      this.candidateId = Number.isNaN(parsedCandidateId) ? null : parsedCandidateId;
       if (this.candidateId) {
         this.loadCounts(this.candidateId);
         this.loadApplications(this.candidateId);
+        this.loadProfile(this.candidateId);
       }
     } else {
       this.router.navigate(['employee-login']);
@@ -101,9 +107,25 @@ export class EmployeeDashboard implements OnInit {
     this.loadVacancies();
   }
 
+  private loadProfile(candidateId: number): void {
+    this.profileService.getProfileById(candidateId).subscribe({
+      next: (profile) => {
+        this.profile = profile;
+        this.user.name = profile.name || this.user.name;
+        this.user.email = profile.email || this.user.email;
+        this.user.location = profile.address || profile.preferredLocation || this.user.location;
+        this.user.role = profile.desiredJobTitle || this.user.role;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // Keep session-based defaults if profile load fails.
+      },
+    });
+  }
+
   private loadCounts(candidateId: number): void {
     forkJoin({
-      applications: this.applicationService.getApplications({ candidateId }),
+      applications: this.applicationService.getApplicationsForCandidate(candidateId),
       interviews: this.interviewService.getInterviews({ candidateId })
     }).subscribe({
       next: (data) => {
@@ -115,44 +137,14 @@ export class EmployeeDashboard implements OnInit {
   }
 
   private loadApplications(candidateId: number): void {
-    this.applicationService.getApplications({ candidateId }).subscribe(apps => {
+    this.applicationService.getApplicationsForCandidate(candidateId).subscribe(apps => {
       this.appliedJobIds = new Set(apps.map(a => a.vacancyId));
       this.cdr.markForCheck();
     });
   }
 
   applyForVacancy(job: Job): void {
-    if (!this.candidateId || this.appliedJobIds.has(job.id) || this.applyingJobIds.has(job.id)) return;
-
-    this.applyingJobIds.add(job.id);
-    this.cdr.markForCheck();
-
-    const application: ApplicationUpsert = {
-      vacancyId: job.id,
-      candidateId: this.candidateId,
-      candidateName: this.user.name,
-      candidateAvatar: this.user.imageUrl,
-      appliedDate: new Date().toISOString(),
-      status: 'New',
-      position: job.title
-    };
-
-    this.applicationService.createApplication(application).pipe(
-      finalize(() => {
-        this.applyingJobIds.delete(job.id);
-        this.cdr.markForCheck();
-      })
-    ).subscribe({
-      next: () => {
-        this.appliedJobIds.add(job.id);
-        this.applicationsCount++;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to apply:', err);
-        alert('Failed to apply for this vacancy. Please try again.');
-      }
-    });
+    this.openApplyModal(job);
   }
 
   isApplied(jobId: number): boolean {
@@ -178,10 +170,71 @@ export class EmployeeDashboard implements OnInit {
 
   jobs: Job[] = [];
   filteredJobs: Job[] = [];
+  recommendedJobs: Job[] = [];
+  allJobs: Job[] = [];
+  showRecommended = false;
+  allJobsTitle = 'All Jobs';
   selectedJob: Job | null = null;
+  applyCoverLetter = '';
+  applyError: string | null = null;
+  applySuccess: string | null = null;
+  isSubmittingApplication = false;
+  recommendedVisibleCount = 2;
+  allJobsVisibleCount = 5;
 
   selectJob(job: Job) {
     this.selectedJob = job;
+  }
+
+  openApplyModal(job: Job): void {
+    this.selectedJob = job;
+    this.applyCoverLetter = '';
+    this.applyError = null;
+    this.applySuccess = null;
+  }
+
+  submitApplication(): void {
+    if (!this.selectedJob || !this.candidateId) {
+      this.applyError = 'Missing job or candidate information.';
+      return;
+    }
+
+    if (this.appliedJobIds.has(this.selectedJob.id)) {
+      this.applyError = 'You have already applied for this job.';
+      return;
+    }
+
+    const coverLetter = this.applyCoverLetter.trim();
+    if (!coverLetter) {
+      this.applyError = 'Cover letter is required.';
+      return;
+    }
+
+    this.isSubmittingApplication = true;
+    this.applyError = null;
+    this.applySuccess = null;
+    this.applyingJobIds.add(this.selectedJob.id);
+
+    this.applicationService.applyToVacancy(this.selectedJob.id, this.candidateId, coverLetter)
+      .pipe(finalize(() => {
+        this.isSubmittingApplication = false;
+        this.applyingJobIds.delete(this.selectedJob!.id);
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
+        next: () => {
+          this.appliedJobIds.add(this.selectedJob!.id);
+          this.applicationsCount++;
+          this.applySuccess = 'Application submitted successfully.';
+          this.applyCoverLetter = '';
+          this.closeApplyModal();
+          this.openSuccessModal();
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.applyError = 'Failed to submit application. Please try again.';
+        },
+      });
   }
 
   toggleSave(job: Job) {
@@ -224,8 +277,81 @@ export class EmployeeDashboard implements OnInit {
       this.filters.jobType,
     ].map((v) => v.trim()).filter(Boolean);
 
-    this.selectedJob = this.filteredJobs.length ? this.filteredJobs[0] : null;
+    if (this.activeTags.length > 0) {
+      this.showRecommended = false;
+      this.allJobsTitle = 'Matching Jobs';
+      this.recommendedVisibleCount = 0;
+      this.allJobsVisibleCount = this.filteredJobs.length;
+      this.selectedJob = this.filteredJobs.length ? this.filteredJobs[0] : null;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const sorted = [...this.jobs].sort((a, b) => {
+      const aTime = a.postedAt ? a.postedAt.getTime() : 0;
+      const bTime = b.postedAt ? b.postedAt.getTime() : 0;
+      return bTime - aTime;
+    });
+
+    this.showRecommended = true;
+    this.allJobsTitle = 'All Jobs';
+
+    const remaining = sorted;
+    const minAllJobs = 2;
+    const totalTarget = Math.max(5, this.recommendedJobs.length + minAllJobs);
+    const allJobsCount = Math.min(remaining.length, Math.max(minAllJobs, totalTarget - this.recommendedJobs.length));
+    this.allJobs = remaining;
+
+    if (this.recommendedJobs.length === 0) {
+      // No recommended jobs; show all jobs ranked by posted date.
+      this.allJobs = sorted;
+    }
+
+    this.recommendedVisibleCount = Math.min(2, this.recommendedJobs.length);
+    this.allJobsVisibleCount = Math.min(
+      this.allJobs.length,
+      Math.max(5, Math.min(this.allJobs.length, allJobsCount))
+    );
+
+    this.selectedJob = this.recommendedJobs.length
+      ? this.recommendedJobs[0]
+      : (this.allJobs.length ? this.allJobs[0] : null);
     this.cdr.markForCheck();
+  }
+
+  showMoreRecommended(): void {
+    this.recommendedVisibleCount = Math.min(this.recommendedJobs.length, this.recommendedVisibleCount + 2);
+  }
+
+  showLessRecommended(): void {
+    this.recommendedVisibleCount = Math.min(2, this.recommendedJobs.length);
+  }
+
+  showMoreAllJobs(): void {
+    this.allJobsVisibleCount = Math.min(this.allJobs.length, this.allJobsVisibleCount + 5);
+  }
+
+  showLessAllJobs(): void {
+    this.allJobsVisibleCount = Math.min(5, this.allJobs.length);
+  }
+
+  private closeApplyModal(): void {
+    const modalEl = document.getElementById('applyModal');
+    if (!modalEl) return;
+    const bootstrap = (window as any)?.bootstrap;
+    const instance = bootstrap?.Modal?.getInstance(modalEl);
+    if (instance) {
+      instance.hide();
+    }
+  }
+
+  private openSuccessModal(): void {
+    const modalEl = document.getElementById('applySuccessModal');
+    if (!modalEl) return;
+    const bootstrap = (window as any)?.bootstrap;
+    if (!bootstrap?.Modal) return;
+    const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
+    instance.show();
   }
 
   clearFilters(): void {
@@ -261,13 +387,15 @@ export class EmployeeDashboard implements OnInit {
 
     this.isLoadingVacancies = true;
     this.vacanciesLoadError = null;
+    const candidateId = this.candidateId;
 
     forkJoin({
       vacancies: this.vacancyService.getVacancies(),
+      recommended: candidateId ? this.vacancyService.getRecommendedVacancies(candidateId).pipe(catchError(() => of([] as Vacancy[]))) : of([] as Vacancy[]),
       companies: this.companyService.getCompanies().pipe(catchError(() => of([] as Company[]))),
     })
       .pipe(
-        map(({ vacancies, companies }) => {
+        map(({ vacancies, companies, recommended }) => {
           const companyNames = new Map<number, string>(
             companies
               .filter((c) => typeof c.id === 'number')
@@ -275,29 +403,40 @@ export class EmployeeDashboard implements OnInit {
           );
 
           const jobsFromVacancies = (vacancies ?? [])
-            .filter((v) => (v.status ?? 'Active') === 'Active')
+            .filter((v) => this.isVacancyActive(v.status))
             .map((vacancy) => this.mapVacancyToJob(vacancy, companyNames, lastSeen, now));
+
+          const recommendedJobs = (recommended ?? [])
+            .filter((v) => this.isVacancyActive(v.status))
+            .map((vacancy) => this.mapVacancyToJob(vacancy, companyNames, lastSeen, now))
+            .sort((a, b) => {
+              const aTime = a.postedAt ? a.postedAt.getTime() : 0;
+              const bTime = b.postedAt ? b.postedAt.getTime() : 0;
+              return bTime - aTime;
+            })
+            .slice(0, 3);
 
           jobsFromVacancies.sort((a, b) => {
             if (a.isNew !== b.isNew) return a.isNew ? -1 : 1;
             return 0;
           });
 
-          return jobsFromVacancies;
+          return { jobsFromVacancies, recommendedJobs };
         }),
         catchError(() => {
           this.vacanciesLoadError = 'Unable to load vacancies right now.';
-          return of([] as Job[]);
+          return of({ jobsFromVacancies: [] as Job[], recommendedJobs: [] as Job[] });
         }),
         finalize(() => {
           this.isLoadingVacancies = false;
           this.cdr.markForCheck();
         }),
       )
-      .subscribe((jobs) => {
-        this.jobs = jobs;
-        this.availableLocations = this.buildUniqueSorted(jobs.map((j) => j.location));
-        this.availableJobTypes = this.buildUniqueSorted(jobs.map((j) => j.type));
+      .subscribe(({ jobsFromVacancies, recommendedJobs }) => {
+        this.jobs = jobsFromVacancies;
+        this.recommendedJobs = recommendedJobs;
+        this.availableLocations = this.buildUniqueSorted(jobsFromVacancies.map((j) => j.location));
+        this.availableJobTypes = this.buildUniqueSorted(jobsFromVacancies.map((j) => j.type));
         this.applyFilters();
         if (!this.vacanciesLoadError) {
           this.setLastSeenVacanciesAt(now);
@@ -322,6 +461,7 @@ export class EmployeeDashboard implements OnInit {
       location: vacancy.location,
       logo: '',
       timePosted: postedAt ? this.formatRelativeTime(postedAt, now) : 'Recently',
+      postedAt,
       type: vacancy.employmentType,
       applicants: vacancy.applicantCount ?? 0,
       isVerified: true,
@@ -347,6 +487,12 @@ export class EmployeeDashboard implements OnInit {
     if (typeof value !== 'string') return null;
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private isVacancyActive(status: unknown): boolean {
+    if (status == null) return true;
+    const normalized = String(status).trim().toUpperCase();
+    return normalized === 'ACTIVE' || normalized === 'OPEN';
   }
 
   private isVacancyNew(postedAt: Date, lastSeen: Date | null, now: Date): boolean {

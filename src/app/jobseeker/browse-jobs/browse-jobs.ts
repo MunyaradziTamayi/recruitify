@@ -5,6 +5,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, finalize, map } from 'rxjs/operators';
 import { VacancyService } from '../../services/vacancy.service';
+import { ApplicationService } from '../../services/application.service';
 import { CompanyService } from '../../services/company.service';
 import { Vacancy } from '../../models/vacancy.model';
 import { Company } from '../../models/company.model';
@@ -13,6 +14,7 @@ interface Job {
   id: number;
   title: string;
   company: string;
+  companyId: number | null;
   location: string;
   logo: string;
   timePosted: string;
@@ -20,6 +22,13 @@ interface Job {
   salary: string;
   description: string;
   tags: string[];
+  requirements: string[];
+  companyLocation: string;
+  companyIndustry: string;
+  companySize: string;
+  companyWebsite: string;
+  companyDescription: string;
+  companyBenefits: string[];
   isSaved: boolean;
 }
 
@@ -60,6 +69,13 @@ export class BrowseJobs implements OnInit {
 
   jobs: Job[] = [];
   filteredJobs: Job[] = [];
+  selectedJob: Job | null = null;
+  candidateId: number | null = null;
+  applyCoverLetter = '';
+  applyError: string | null = null;
+  applySuccess: string | null = null;
+  isSubmittingApplication = false;
+  appliedJobIds = new Set<number>();
 
   availableLocations: string[] = [];
   availableJobTypes: string[] = [];
@@ -68,6 +84,7 @@ export class BrowseJobs implements OnInit {
     private router: Router,
     private vacancyService: VacancyService,
     private companyService: CompanyService,
+    private applicationService: ApplicationService,
   ) {}
 
   ngOnInit(): void {
@@ -79,6 +96,11 @@ export class BrowseJobs implements OnInit {
         email: googleUser.email || '',
         imageUrl: googleUser.picture || 'https://i.pravatar.cc/150?img=1'
       };
+      const parsedCandidateId = Number(googleUser.profileId);
+      this.candidateId = Number.isNaN(parsedCandidateId) ? null : parsedCandidateId;
+      if (this.candidateId) {
+        this.loadAppliedJobs(this.candidateId);
+      }
     } else {
       this.router.navigate(['employee-login']);
       return;
@@ -132,6 +154,70 @@ export class BrowseJobs implements OnInit {
     job.isSaved = !job.isSaved;
   }
 
+  openJobDetails(job: Job): void {
+    this.selectedJob = job;
+  }
+
+  openApplyModal(job: Job): void {
+    this.selectedJob = job;
+    this.applyCoverLetter = '';
+    this.applyError = null;
+    this.applySuccess = null;
+    this.closeModal('jobDetailsModal');
+  }
+
+  submitApplication(): void {
+    if (!this.selectedJob || !this.candidateId) {
+      this.applyError = 'Missing job or candidate information.';
+      return;
+    }
+
+    if (this.appliedJobIds.has(this.selectedJob.id)) {
+      this.applyError = 'You have already applied for this job.';
+      return;
+    }
+
+    const coverLetter = this.applyCoverLetter.trim();
+    if (!coverLetter) {
+      this.applyError = 'Cover letter is required.';
+      return;
+    }
+
+    this.isSubmittingApplication = true;
+    this.applyError = null;
+
+    this.applicationService.applyToVacancy(this.selectedJob.id, this.candidateId, coverLetter)
+      .pipe(finalize(() => {
+        this.isSubmittingApplication = false;
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
+        next: () => {
+          this.applySuccess = 'Application submitted successfully.';
+          this.applyCoverLetter = '';
+          this.appliedJobIds.add(this.selectedJob!.id);
+          this.closeModal('applyModalBrowse');
+          this.openModal('applySuccessModalBrowse');
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.applyError = 'Failed to submit application. Please try again.';
+        },
+      });
+  }
+
+  private loadAppliedJobs(candidateId: number): void {
+    this.applicationService.getApplicationsForCandidate(candidateId).subscribe({
+      next: (apps) => {
+        this.appliedJobIds = new Set(apps.map((a) => a.vacancyId));
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // Ignore; keep set empty.
+      },
+    });
+  }
+
   logout(): void {
     sessionStorage.removeItem('loggedInUser');
     this.router.navigate(['employee-login']);
@@ -154,7 +240,7 @@ export class BrowseJobs implements OnInit {
           );
 
           return (vacancies ?? [])
-            .filter((v) => (v.status ?? 'Active') === 'Active')
+            .filter((v) => this.isVacancyActive(v.status))
             .map((vacancy) => this.mapVacancyToJob(vacancy, companyById, now));
         }),
         catchError(() => {
@@ -185,6 +271,7 @@ export class BrowseJobs implements OnInit {
       id: vacancy.id ?? 0,
       title: vacancy.title,
       company: companyName,
+      companyId: vacancy.companyId ?? null,
       location: vacancy.location,
       logo: company?.logoUrl || this.buildDefaultLogoUrl(companyName),
       timePosted: postedAt ? this.formatRelativeTime(postedAt, now) : 'Recently',
@@ -192,8 +279,32 @@ export class BrowseJobs implements OnInit {
       salary: this.formatSalary(vacancy),
       description: vacancy.description,
       tags: this.buildTags(vacancy),
+      requirements: vacancy.requirements ?? [],
+      companyLocation: company?.location ?? '-',
+      companyIndustry: company?.industry ?? '-',
+      companySize: company?.size ?? '-',
+      companyWebsite: company?.website ?? '-',
+      companyDescription: company?.description ?? '-',
+      companyBenefits: company?.benefits ?? [],
       isSaved: false,
     };
+  }
+
+  private openModal(id: string): void {
+    const modalEl = document.getElementById(id);
+    if (!modalEl) return;
+    const bootstrap = (window as any)?.bootstrap;
+    if (!bootstrap?.Modal) return;
+    const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
+    instance.show();
+  }
+
+  private closeModal(id: string): void {
+    const modalEl = document.getElementById(id);
+    if (!modalEl) return;
+    const bootstrap = (window as any)?.bootstrap;
+    const instance = bootstrap?.Modal?.getInstance(modalEl);
+    if (instance) instance.hide();
   }
 
   private buildTags(vacancy: Vacancy): string[] {
@@ -227,6 +338,12 @@ export class BrowseJobs implements OnInit {
     if (typeof value !== 'string') return null;
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private isVacancyActive(status: unknown): boolean {
+    if (status == null) return true;
+    const normalized = String(status).trim().toUpperCase();
+    return normalized === 'ACTIVE' || normalized === 'OPEN';
   }
 
   private formatRelativeTime(postedAt: Date, now: Date): string {

@@ -53,6 +53,14 @@ export class ApplicationService {
     return this.http.get<Application[]>(this.baseUrl, { params });
   }
 
+  getApplicationsForCandidate(candidateId: number): Observable<Application[]> {
+    return this.http.get<Application[]>(`${this.baseUrl}/candidate/${candidateId}`);
+  }
+
+  getApplicationsForVacancy(vacancyId: number): Observable<Application[]> {
+    return this.http.get<Application[]>(`${this.baseUrl}/vacancy/${vacancyId}`);
+  }
+
   updateApplication(id: number, request: ApplicationUpsert): Observable<Application> {
     return this.http.put<Application>(`${this.baseUrl}/${id}`, request).pipe(
       tap((app) => this._applicationChanges$.next({ type: 'update', applicationId: app.id, vacancyId: app.vacancyId }))
@@ -63,5 +71,10 @@ export class ApplicationService {
     return this.http.delete<void>(`${this.baseUrl}/${id}`).pipe(
       tap(() => this._applicationChanges$.next({ type: 'delete', applicationId: id }))
     );
+  }
+
+  applyToVacancy(vacancyId: number, candidateId: number, coverLetter: string): Observable<Application> {
+    const url = `${this.baseUrl}/vacancies/${vacancyId}/candidates/${candidateId}`;
+    return this.http.post<Application>(url, { coverLetter });
   }
 }

@@ -19,6 +19,7 @@ export interface CandidateProfile {
   email: string;
   phone: string;
   address: string;
+  profilePic?: string | null;
   objectives: string | null;
   lookingForJob: boolean | null;
   desiredJobTitle: string | null;
@@ -40,6 +41,7 @@ export interface CandidateProfileRequest {
   email: string;
   phone: string;
   address: string;
+  profilePic?: string | null;
   objectives?: string | null;
   lookingForJob?: boolean | null;
   desiredJobTitle?: string | null;

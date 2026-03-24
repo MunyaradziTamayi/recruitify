@@ -11,8 +11,10 @@ export interface Vacancy {
     };
     description: string;
     requirements: string[];
-    status: 'Active' | 'Closed' | 'Draft' | 'Archived';
+    status: 'Active' | 'Closed' | 'Draft' | 'Archived' | 'OPEN';
     postedDate: string;
+    closingDate?: string | null;
     companyId: number;
     applicantCount: number;
 }
+

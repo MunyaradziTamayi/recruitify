@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CvExtractionService } from '../../services/cv-extraction.service';
 import { CandidateProfileDto } from '../../models/candidate-profile.model';
@@ -11,6 +11,7 @@ import { CandidateProfileDto } from '../../models/candidate-profile.model';
     styleUrl: './cv-upload.component.css'
 })
 export class CvUploadComponent {
+    @Input() profileId: number | null = null;
     selectedFile: File | null = null;
     profile: CandidateProfileDto | null = null;
     isLoading = false;
@@ -32,11 +33,16 @@ export class CvUploadComponent {
 
     uploadCV(): void {
         if (!this.selectedFile) return;
+        const profileId = this.getProfileId();
+        if (!profileId) {
+            this.error = 'Missing profile ID. Please sign in again.';
+            return;
+        }
 
         this.isLoading = true;
         this.error = null;
 
-        this.cvService.uploadCV(this.selectedFile).subscribe({
+        this.cvService.uploadCV(this.selectedFile, profileId).subscribe({
             next: (profile) => {
                 this.profile = profile;
                 this.isLoading = false;
@@ -58,5 +64,22 @@ export class CvUploadComponent {
         this.profile = null;
         this.error = null;
         this.isSuccess = false;
+    }
+
+    private getProfileId(): number | null {
+        if (typeof this.profileId === 'number' && !Number.isNaN(this.profileId)) {
+            return this.profileId;
+        }
+
+        const storedUser = sessionStorage.getItem('loggedInUser');
+        if (!storedUser) return null;
+
+        try {
+            const user = JSON.parse(storedUser);
+            const id = Number(user?.profileId);
+            return Number.isNaN(id) ? null : id;
+        } catch {
+            return null;
+        }
     }
 }

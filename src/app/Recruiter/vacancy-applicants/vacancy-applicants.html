@@ -60,6 +60,16 @@
         </div>
 
         <div class="content-wrapper">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <label class="form-label small text-muted">Select vacancy</label>
+                    <select class="form-select" [(ngModel)]="selectedVacancyId" (ngModelChange)="onVacancySelectionChange()">
+                        <option [ngValue]="null">All vacancies</option>
+                        <option *ngFor="let v of vacancies" [ngValue]="v.id">{{ v.title }}</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="alert alert-info" *ngIf="infoMessage as msg">
                 {{ msg }}
             </div>
@@ -106,8 +116,12 @@
                             </div>
 
                             <div class="d-grid gap-2">
-                                <button class="btn btn-sm btn-outline-primary">View CV</button>
-                                <button class="btn btn-sm btn-primary">Schedule Interview</button>
+                                <button class="btn btn-sm btn-outline-primary" (click)="viewCv(applicant)">View CV</button>
+                                <button class="btn btn-sm btn-primary"
+                                    (click)="openInterviewModal(applicant)"
+                                    data-bs-toggle="modal" data-bs-target="#scheduleInterviewModal">
+                                    Schedule Interview
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -122,4 +136,71 @@
             </div>
         </div>
     </main>
+</div>
+
+<!-- Schedule Interview Modal -->
+<div class="modal fade" id="scheduleInterviewModal" tabindex="-1" aria-labelledby="scheduleInterviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scheduleInterviewModalLabel">Schedule Interview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-control" [(ngModel)]="interviewForm.date">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Time</label>
+                    <input type="time" class="form-control" [(ngModel)]="interviewForm.time">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" [(ngModel)]="interviewForm.type">
+                        <option [ngValue]="'Virtual'">Online</option>
+                        <option [ngValue]="'In-person'">Physical</option>
+                    </select>
+                </div>
+                <div class="mb-3" *ngIf="interviewForm.type === 'Virtual'">
+                    <label class="form-label">Meeting Link</label>
+                    <input type="text" class="form-control" [(ngModel)]="interviewForm.meetingLink">
+                </div>
+                <div class="mb-3" *ngIf="interviewForm.type === 'In-person'">
+                    <label class="form-label">Location</label>
+                    <input type="text" class="form-control" [(ngModel)]="interviewForm.location">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" rows="3" [(ngModel)]="interviewForm.notes"></textarea>
+                </div>
+                <div *ngIf="interviewError" class="text-danger small">{{ interviewError }}</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="submitInterview()" [disabled]="scheduling">
+                    <span *ngIf="scheduling" class="spinner-border spinner-border-sm me-2"></span>
+                    Schedule
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interview Success Modal -->
+<div class="modal fade" id="interviewSuccessModal" tabindex="-1" aria-labelledby="interviewSuccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="interviewSuccessModalLabel">Interview Scheduled</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">{{ interviewSuccess || 'Interview scheduled successfully.' }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>

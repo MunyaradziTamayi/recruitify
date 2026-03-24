@@ -61,13 +61,49 @@
                             <img [src]="user.imageUrl" alt="Avatar"
                                 class="rounded-circle mb-3 border border-4 border-white shadow-sm"
                                 style="width: 150px; height: 150px; object-fit: cover;">
+                            <div *ngIf="editMode" class="mb-3 text-start">
+                                <label class="form-label small text-muted">Profile Picture URL</label>
+                                <input class="form-control" [(ngModel)]="editModel.profilePic" placeholder="https://...">
+                            </div>
                             <h4 class="fw-bold mb-1">{{ user.name }}</h4>
-                            <p class="text-primary fw-bold mb-3">{{ user.role }}</p>
-                            <div class="d-flex justify-content-center gap-2 mb-4">
+                            <p class="text-primary fw-bold mb-3" *ngIf="!editMode">{{ user.role }}</p>
+                            <div *ngIf="editMode" class="mb-3">
+                                <label class="form-label small text-muted">Desired Role</label>
+                                <input class="form-control" [(ngModel)]="editModel.desiredJobTitle" placeholder="e.g. Product Designer">
+                            </div>
+                            <div class="d-flex justify-content-center gap-2 mb-4" *ngIf="!editMode">
                                 <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>{{
                                     user.location }}</span>
+                                <span class="badge bg-light text-dark border" *ngIf="profile?.lookingForJob !== null">
+                                    <i class="bi bi-briefcase me-1"></i>
+                                    {{ profile?.lookingForJob ? 'Looking for Job' : 'Not Looking' }}
+                                </span>
                             </div>
-                            <button class="btn btn-primary w-100 mb-2">Edit Profile</button>
+                            <div *ngIf="editMode" class="mb-4">
+                                <label class="form-label small text-muted">Location</label>
+                                <input class="form-control" [(ngModel)]="editModel.preferredLocation" placeholder="City, Country">
+                            </div>
+                            <div *ngIf="editMode" class="mb-4 text-start">
+                                <label class="form-label small text-muted">Looking for Job</label>
+                                <select class="form-select" [(ngModel)]="editModel.lookingForJob">
+                                    <option [ngValue]="null">Not specified</option>
+                                    <option [ngValue]="true">Yes</option>
+                                    <option [ngValue]="false">No</option>
+                                </select>
+                            </div>
+                            <button *ngIf="!editMode" class="btn btn-primary w-100 mb-2" (click)="enterEditMode()">
+                                Edit Profile
+                            </button>
+                            <div *ngIf="editMode" class="d-grid gap-2 mb-2">
+                                <button class="btn btn-success" (click)="saveProfile()" [disabled]="saveInFlight">
+                                    <span *ngIf="saveInFlight" class="spinner-border spinner-border-sm me-2"></span>
+                                    Save Changes
+                                </button>
+                                <button class="btn btn-outline-secondary" (click)="cancelEdit()" [disabled]="saveInFlight">
+                                    Cancel
+                                </button>
+                                <div *ngIf="saveError" class="text-danger small">{{ saveError }}</div>
+                            </div>
                             <button class="btn btn-outline-secondary w-100" data-bs-toggle="modal"
                                 data-bs-target="#uploadCvModal">Upload Resume</button>
                         </div>
@@ -108,14 +144,16 @@
                             <div class="icon-box me-3"><i class="bi bi-envelope"></i></div>
                             <div>
                                 <p class="small text-muted mb-0">Email</p>
-                                <p class="mb-0 fw-bold small text-break">{{ user.email }}</p>
+                                <p *ngIf="!editMode" class="mb-0 fw-bold small text-break">{{ user.email }}</p>
+                                <input *ngIf="editMode" class="form-control form-control-sm" [(ngModel)]="editModel.email">
                             </div>
                         </div>
                         <div class="d-flex align-items-center mb-0">
                             <div class="icon-box me-3"><i class="bi bi-telephone"></i></div>
                             <div>
                                 <p class="small text-muted mb-0">Phone</p>
-                                <p class="mb-0 fw-bold small">{{ user.phone }}</p>
+                                <p *ngIf="!editMode" class="mb-0 fw-bold small">{{ user.phone }}</p>
+                                <input *ngIf="editMode" class="form-control form-control-sm" [(ngModel)]="editModel.phone">
                             </div>
                         </div>
                     </div>
@@ -126,17 +164,74 @@
                     <!-- Bio -->
                     <div class="card border-0 shadow-sm mb-4 p-4">
                         <h6 class="fw-bold mb-3">Professional Summary</h6>
-                        <p class="text-muted mb-0">{{ user.bio }}</p>
+                        <p *ngIf="!editMode" class="text-muted mb-0">{{ user.bio }}</p>
+                        <textarea *ngIf="editMode" class="form-control" rows="4" [(ngModel)]="editModel.objectives"></textarea>
+                    </div>
+
+                    <!-- Preferences -->
+                    <div class="card border-0 shadow-sm mb-4 p-4">
+                        <h6 class="fw-bold mb-3">Job Preferences</h6>
+                        <div *ngIf="!editMode" class="row g-3">
+                            <div class="col-md-6">
+                                <p class="small text-muted mb-1">Desired Category</p>
+                                <p class="mb-0 fw-bold">{{ profile?.desiredCategory || 'Not set' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="small text-muted mb-1">Preferred Work Mode</p>
+                                <p class="mb-0 fw-bold">{{ profile?.preferredWorkMode || 'Not set' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="small text-muted mb-1">Salary Min</p>
+                                <p class="mb-0 fw-bold">{{ profile?.salaryMin ?? 'Not set' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="small text-muted mb-1">Salary Max</p>
+                                <p class="mb-0 fw-bold">{{ profile?.salaryMax ?? 'Not set' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="small text-muted mb-1">Salary Currency</p>
+                                <p class="mb-0 fw-bold">{{ profile?.salaryCurrency || 'Not set' }}</p>
+                            </div>
+                        </div>
+                        <div *ngIf="editMode" class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">Desired Category</label>
+                                <input class="form-control" [(ngModel)]="editModel.desiredCategory">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">Preferred Work Mode</label>
+                                <select class="form-select" [(ngModel)]="editModel.preferredWorkMode">
+                                    <option value="">Select</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                    <option value="Remote">Remote</option>
+                                    <option value="Onsite">Onsite</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">Salary Min</label>
+                                <input class="form-control" type="number" [(ngModel)]="editModel.salaryMin">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">Salary Max</label>
+                                <input class="form-control" type="number" [(ngModel)]="editModel.salaryMax">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">Salary Currency</label>
+                                <input class="form-control" [(ngModel)]="editModel.salaryCurrency" placeholder="e.g. USD">
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Experience -->
                     <div class="card border-0 shadow-sm mb-4 p-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h6 class="fw-bold mb-0">Work Experience</h6>
-                            <button class="btn btn-sm btn-light text-primary fw-bold"><i
-                                    class="bi bi-plus-lg me-1"></i>Add</button>
+                            <button *ngIf="editMode" class="btn btn-sm btn-light text-primary fw-bold"
+                                (click)="addExperience()">
+                                <i class="bi bi-plus-lg me-1"></i>Add
+                            </button>
                         </div>
-                        <div class="experience-list">
+                        <div class="experience-list" *ngIf="!editMode">
                             <div *ngFor="let exp of user.experience; let last = last"
                                 class="experience-item d-flex gap-4" [class.mb-4]="!last">
                                 <div class="timeline-box">
@@ -153,16 +248,49 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="experience-list" *ngIf="editMode">
+                            <div *ngFor="let exp of editModel.experiences; let i = index" class="border rounded p-3 mb-3">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Job Title</label>
+                                        <input class="form-control" [(ngModel)]="exp.jobTitle">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Company</label>
+                                        <input class="form-control" [(ngModel)]="exp.company">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Start Date</label>
+                                        <input class="form-control" type="date" [(ngModel)]="exp.startDate">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">End Date</label>
+                                        <input class="form-control" type="date" [(ngModel)]="exp.endDate">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small text-muted">Description</label>
+                                        <textarea class="form-control" rows="3" [(ngModel)]="exp.description"></textarea>
+                                    </div>
+                                </div>
+                                <div class="text-end mt-2">
+                                    <button class="btn btn-sm btn-outline-danger" (click)="removeExperience(i)">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Education -->
                     <div class="card border-0 shadow-sm mb-4 p-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h6 class="fw-bold mb-0">Education</h6>
-                            <button class="btn btn-sm btn-light text-primary fw-bold"><i
-                                    class="bi bi-plus-lg me-1"></i>Add</button>
+                            <button *ngIf="editMode" class="btn btn-sm btn-light text-primary fw-bold"
+                                (click)="addEducation()">
+                                <i class="bi bi-plus-lg me-1"></i>Add
+                            </button>
                         </div>
-                        <div class="experience-list">
+                        <div class="experience-list" *ngIf="!editMode">
                             <div *ngFor="let edu of user.education; let last = last"
                                 class="experience-item d-flex gap-4" [class.mb-4]="!last">
                                 <div class="timeline-box">
@@ -178,18 +306,47 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="experience-list" *ngIf="editMode">
+                            <div *ngFor="let edu of editModel.educations; let i = index" class="border rounded p-3 mb-3">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Degree</label>
+                                        <input class="form-control" [(ngModel)]="edu.degree">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Institution</label>
+                                        <input class="form-control" [(ngModel)]="edu.institution">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Graduation Year</label>
+                                        <input class="form-control" [(ngModel)]="edu.graduationYear">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small text-muted">Description</label>
+                                        <textarea class="form-control" rows="3" [(ngModel)]="edu.description"></textarea>
+                                    </div>
+                                </div>
+                                <div class="text-end mt-2">
+                                    <button class="btn btn-sm btn-outline-danger" (click)="removeEducation(i)">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Skills -->
                     <div class="card border-0 shadow-sm mb-4 p-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h6 class="fw-bold mb-0">Skills & Expertise</h6>
-                            <button class="btn btn-sm btn-light text-primary fw-bold"><i
-                                    class="bi bi-pencil me-1"></i>Edit</button>
                         </div>
-                        <div class="d-flex flex-wrap gap-2">
+                        <div *ngIf="!editMode" class="d-flex flex-wrap gap-2">
                             <span *ngFor="let skill of user.skills"
                                 class="badge bg-light text-dark border px-3 py-2 skill-badge">{{ skill }}</span>
+                        </div>
+                        <div *ngIf="editMode">
+                            <label class="form-label small text-muted">Comma-separated skills</label>
+                            <input class="form-control" [(ngModel)]="skillsText" placeholder="e.g. UI Design, UX Research, Figma">
                         </div>
                     </div>
                 </div>
@@ -198,4 +355,4 @@
     </div>
 </div>
 
-<app-cv-upload (onUploadSuccess)="refreshProfile()"></app-cv-upload>
+<app-cv-upload [profileId]="candidateId" (onUploadSuccess)="refreshProfile()"></app-cv-upload>

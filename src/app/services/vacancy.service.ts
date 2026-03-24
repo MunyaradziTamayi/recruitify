@@ -81,6 +81,12 @@ export class VacancyService {
     );
   }
 
+  closeVacancy(id: number): Observable<void> {
+    return this.http.get<void>(`${this.baseUrl}/${id}/close`).pipe(
+      tap(() => this.vacancyChangesSubject.next({ type: 'update', id })),
+    );
+  }
+
   deleteVacancy(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`).pipe(
       tap(() => {

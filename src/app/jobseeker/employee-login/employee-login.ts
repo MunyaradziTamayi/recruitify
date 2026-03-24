@@ -22,6 +22,17 @@ export class EmployeeLogin implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.tryInitGoogle();
+  }
+
+  private tryInitGoogle(retries = 20): void {
+    if (typeof google === 'undefined' || !google?.accounts?.id) {
+      if (retries > 0) {
+        setTimeout(() => this.tryInitGoogle(retries - 1), 250);
+      }
+      return;
+    }
+
     google.accounts.id.initialize({
       client_id: '146794311153-fok9cje9nm7c8q1m3aie85i8s2u3rp5b.apps.googleusercontent.com',
       callback: (resp: any) => {
@@ -29,12 +40,15 @@ export class EmployeeLogin implements OnInit {
       }
     });
 
-    google.accounts.id.renderButton(document.getElementById('login_button'), {
-      color: 'filled_blue',
-      size: 'large',
-      shape: 'rectangular',
-      width: 330
-    });
+    const buttonEl = document.getElementById('login_button');
+    if (buttonEl) {
+      google.accounts.id.renderButton(buttonEl, {
+        color: 'filled_blue',
+        size: 'large',
+        shape: 'rectangular',
+        width: 330
+      });
+    }
   }
 
   private decodeToken(token: string) {

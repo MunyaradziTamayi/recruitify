@@ -1,6 +1,6 @@
 ﻿// services/cv-extraction.service.ts
 import { Inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { CandidateProfileDto } from '../models/candidate-profile.model';
 import { API_BASE_URL } from '../config/api-base-url';
@@ -18,11 +18,12 @@ export class CvExtractionService {
     this.apiUrl = `${apiBaseUrl.replace(/\/$/, '')}/api/cv`;
   }
 
-  uploadCV(file: File): Observable<CandidateProfileDto> {
+  uploadCV(file: File, profileId: number): Observable<CandidateProfileDto> {
     const formData = new FormData();
     formData.append('cvFile', file, file.name);
 
-    return this.http.post<CandidateProfileDto>(`${this.apiUrl}/upload`, formData);
+    const params = new HttpParams().set('profileId', String(profileId));
+    return this.http.post<CandidateProfileDto>(`${this.apiUrl}/upload`, formData, { params });
   }
 
   viewCvPdf(profileId: number): Observable<Blob> {

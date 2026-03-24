@@ -180,8 +180,11 @@
                                                     <span *ngFor="let tag of job.tags"
                                                         class="badge bg-light text-dark border">{{ tag }}</span>
                                                 </div>
-                                                <button class="btn btn-outline-primary px-4 btn-sm">View
-                                                    Details</button>
+                                                <button class="btn btn-outline-primary px-4 btn-sm"
+                                                    (click)="openJobDetails(job)" data-bs-toggle="modal"
+                                                    data-bs-target="#jobDetailsModal">
+                                                    View Details
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -200,6 +203,105 @@
                         <button class="btn btn-primary mt-3" (click)="clearFilters()">Clear All Filters</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Details Modal -->
+<div class="modal fade" id="jobDetailsModal" tabindex="-1" aria-labelledby="jobDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="jobDetailsModalLabel">{{ selectedJob?.title }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div *ngIf="selectedJob">
+                    <p class="text-muted mb-2">{{ selectedJob.company }} • {{ selectedJob.location }}</p>
+                    <p class="mb-3">{{ selectedJob.description }}</p>
+
+                    <h6 class="fw-bold">Requirements</h6>
+                    <ul *ngIf="selectedJob.requirements?.length" class="small text-muted ps-3">
+                        <li *ngFor="let req of selectedJob.requirements">{{ req }}</li>
+                    </ul>
+                    <p *ngIf="!selectedJob.requirements?.length" class="text-muted small">No requirements listed.</p>
+
+                    <hr />
+                    <h6 class="fw-bold">Company Info</h6>
+                    <p class="small text-muted mb-1"><strong>Industry:</strong> {{ selectedJob.companyIndustry }}</p>
+                    <p class="small text-muted mb-1"><strong>Size:</strong> {{ selectedJob.companySize }}</p>
+                    <p class="small text-muted mb-1"><strong>Location:</strong> {{ selectedJob.companyLocation }}</p>
+                    <p class="small text-muted mb-1"><strong>Website:</strong> {{ selectedJob.companyWebsite }}</p>
+                    <p class="small text-muted mb-0"><strong>About:</strong> {{ selectedJob.companyDescription }}</p>
+
+                    <div class="mt-3" *ngIf="selectedJob.companyBenefits?.length">
+                        <h6 class="fw-bold">Benefits</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span *ngFor="let benefit of selectedJob.companyBenefits"
+                                class="badge bg-light text-dark border">{{ benefit }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn"
+                    [class.btn-primary]="!appliedJobIds.has(selectedJob?.id || 0)"
+                    [class.btn-success]="appliedJobIds.has(selectedJob?.id || 0)"
+                    [disabled]="appliedJobIds.has(selectedJob?.id || 0)"
+                    (click)="openApplyModal(selectedJob!)"
+                    data-bs-toggle="modal" data-bs-target="#applyModalBrowse">
+                    <span *ngIf="appliedJobIds.has(selectedJob?.id || 0)">
+                        <i class="bi bi-check-lg me-1"></i>Applied
+                    </span>
+                    <span *ngIf="!appliedJobIds.has(selectedJob?.id || 0)">Quick Apply</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Apply Modal -->
+<div class="modal fade" id="applyModalBrowse" tabindex="-1" aria-labelledby="applyModalBrowseLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="applyModalBrowseLabel">Apply for {{ selectedJob?.title }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Cover Letter</label>
+                    <textarea class="form-control" rows="5" [(ngModel)]="applyCoverLetter"
+                        placeholder="Write a short cover letter..."></textarea>
+                </div>
+                <div *ngIf="applyError" class="text-danger small">{{ applyError }}</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="submitApplication()" [disabled]="isSubmittingApplication">
+                    <span *ngIf="isSubmittingApplication" class="spinner-border spinner-border-sm me-2"></span>
+                    Submit Application
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Apply Success Modal -->
+<div class="modal fade" id="applySuccessModalBrowse" tabindex="-1" aria-labelledby="applySuccessModalBrowseLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="applySuccessModalBrowseLabel">Application Submitted</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">{{ applySuccess || 'Your application has been submitted successfully.' }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
