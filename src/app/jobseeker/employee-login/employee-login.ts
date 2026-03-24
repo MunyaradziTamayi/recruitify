@@ -1,6 +1,6 @@
 declare var google: any;
 
-import { Component, OnInit } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { RecruiterService } from '../../services/recruiter.service';
@@ -13,16 +13,29 @@ import { ProfileService } from '../../services/profile.service';
   templateUrl: './employee-login.html',
   styleUrl: './employee-login.css',
 })
-export class EmployeeLogin implements OnInit {
+export class EmployeeLogin implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
     private recruiters: RecruiterService,
     private profiles: ProfileService,
+    private ngZone: NgZone,
   ) {}
 
   ngOnInit(): void {
     this.tryInitGoogle();
+  }
+
+  ngOnDestroy(): void {
+    try {
+      if (typeof google !== 'undefined' && google?.accounts?.id) {
+        // Ensure any One Tap/overlay is removed when leaving the login page.
+        google.accounts.id.cancel();
+        google.accounts.id.disableAutoSelect();
+      }
+    } catch {
+      // ignore
+    }
   }
 
   private tryInitGoogle(retries = 20): void {
@@ -36,7 +49,7 @@ export class EmployeeLogin implements OnInit {
     google.accounts.id.initialize({
       client_id: '146794311153-fok9cje9nm7c8q1m3aie85i8s2u3rp5b.apps.googleusercontent.com',
       callback: (resp: any) => {
-        this.handleLogin(resp);
+        this.ngZone.run(() => this.handleLogin(resp));
       }
     });
 

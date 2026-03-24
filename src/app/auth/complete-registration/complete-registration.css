@@ -10,6 +10,14 @@
   color: #e5e7eb;
 }
 
+:host ::ng-deep #credential_picker_container,
+:host ::ng-deep .g_id_prompt,
+:host ::ng-deep iframe[src*="accounts.google.com/gsi"] {
+  pointer-events: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
 .complete-card {
   width: 100%;
   max-width: 560px;

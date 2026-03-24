@@ -1,1 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
+
+#credential_picker_container,
+.g_id_prompt,
+#g_id_onload,
+iframe[src*="accounts.google.com/gsi"] {
+  pointer-events: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}

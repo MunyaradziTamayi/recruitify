@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+declare var google: any;
+
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { RecruiterService } from '../../services/recruiter.service';
@@ -13,7 +15,7 @@ type UserRole = 'recruiter' | 'employee';
   templateUrl: './complete-registration.html',
   styleUrl: './complete-registration.css',
 })
-export class CompleteRegistration implements OnInit {
+export class CompleteRegistration implements OnInit, AfterViewInit {
   userName = '';
   selectedRole: UserRole | null = null;
   error = '';
@@ -25,6 +27,8 @@ export class CompleteRegistration implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.cleanupOneTap();
+
     const pendingUser = sessionStorage.getItem('pendingGoogleUser');
     if (!pendingUser) {
       this.router.navigate(['employee-login']);
@@ -33,6 +37,32 @@ export class CompleteRegistration implements OnInit {
 
     const user = JSON.parse(pendingUser);
     this.userName = user?.name ?? 'there';
+  }
+
+  ngAfterViewInit(): void {
+    // Run again after view init to catch late-mounted One Tap iframes.
+    setTimeout(() => this.cleanupOneTap(), 0);
+  }
+
+  private cleanupOneTap(): void {
+    try {
+      if (typeof google !== 'undefined' && google?.accounts?.id) {
+        google.accounts.id.cancel();
+      }
+    } catch {
+      // ignore
+    }
+
+    const selectors = [
+      'div.g_id_prompt',
+      '#credential_picker_container',
+      '#g_id_onload',
+      'iframe[src*="accounts.google.com/gsi"]',
+    ];
+
+    selectors.forEach((selector) => {
+      document.querySelectorAll(selector).forEach((el) => el.remove());
+    });
   }
 
   chooseRole(role: UserRole) {
