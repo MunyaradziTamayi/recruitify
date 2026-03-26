@@ -9,6 +9,6 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(),
     provideRouter(routes),
-    { provide: API_BASE_URL, useValue: 'https://recruitify-latest.onrender.com' }
+    { provide: API_BASE_URL, useValue: 'http://localhost:8080' }
   ]
 };
