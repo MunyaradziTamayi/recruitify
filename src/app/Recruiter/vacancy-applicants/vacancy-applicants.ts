@@ -16,6 +16,9 @@ import { RecommendedCandidate } from '../../services/application.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, forkJoin, map, of, switchMap, tap, EMPTY } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
+import { EmailService } from '../../services/email.service';
+import { ProfileService } from '../../services/profile.service';
+import { RecruiterService } from '../../services/recruiter.service';
 
 interface EmailResult {
   emailSent: boolean;
