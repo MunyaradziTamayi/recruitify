@@ -269,6 +269,10 @@
                                     target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()">
                                     View LinkedIn profile
                                 </a>
+                                <button *ngIf="c.linkedinUrl" type="button" class="btn btn-sm btn-primary"
+                                    (click)="sendMessageToCandidate(c); $event.stopPropagation()">
+                                    Send Message
+                                </button>
                                 <span class="text-muted small" *ngIf="!c.linkedinUrl">No LinkedIn URL found.</span>
                                 <span class="text-muted small ms-auto">Click again to collapse</span>
                             </div>

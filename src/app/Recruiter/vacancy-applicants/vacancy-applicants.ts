@@ -359,4 +359,23 @@ export class VacancyApplicants implements OnInit {
     const pct = Math.max(0, Math.min(100, Math.round(score * 100)));
     return `${pct}%`;
   }
+
+  sendMessageToCandidate(candidate: RecommendedCandidate): void {
+    if (!candidate.linkedinUrl) return;
+
+    // Extract username from LinkedIn URL
+    // URL format: https://www.linkedin.com/in/username
+    const urlMatch = candidate.linkedinUrl.match(/linkedin\.com\/in\/([^/?]+)/);
+    if (!urlMatch) {
+      this.recommendedError = 'Unable to extract LinkedIn username from URL.';
+      this.triggerViewUpdate();
+      return;
+    }
+
+    const username = urlMatch[1];
+    const messageUrl = `https://www.linkedin.com/messaging/compose/?recipient=${username}`;
+
+    // Open LinkedIn messaging compose page
+    window.open(messageUrl, '_blank');
+  }
 }
