@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, Subject, tap } from 'rxjs';
+import { map, Observable, Subject, tap } from 'rxjs';
 import { Application } from '../models/application.model';
 import { API_BASE_URL } from '../config/api-base-url';
 
@@ -11,6 +11,19 @@ export type ApplicationQuery = {
 };
 
 export type ApplicationUpsert = Omit<Application, 'id'>;
+
+export interface RecommendedCandidate {
+  fullName: string | null;
+  title: string | null;
+  company: string | null;
+  location: string | null;
+  email: string | null;
+  linkedinUrl: string | null;
+  matchScore: number;
+  matchedRequiredSkills: string[];
+  matchedOptionalSkills: string[];
+  source: unknown;
+}
 
 export interface ApplicationChangeEvent {
   type: 'create' | 'update' | 'delete';
@@ -76,5 +89,22 @@ export class ApplicationService {
   applyToVacancy(vacancyId: number, candidateId: number, coverLetter: string): Observable<Application> {
     const url = `${this.baseUrl}/vacancies/${vacancyId}/candidates/${candidateId}`;
     return this.http.post<Application>(url, { coverLetter });
+  }
+
+  getRecommendedCandidatesForVacancy(
+    vacancyId: number,
+    options: { maxResults?: number; requireAllRequiredSkills?: boolean } = {},
+  ): Observable<RecommendedCandidate[]> {
+    let params = new HttpParams();
+    if (options.maxResults != null) params = params.set('maxResults', String(options.maxResults));
+    if (options.requireAllRequiredSkills != null) {
+      params = params.set('requireAllRequiredSkills', String(options.requireAllRequiredSkills));
+    }
+
+    return this.http
+      .get<{ candidates: RecommendedCandidate[] }>(`${this.baseUrl}/vacancy/${vacancyId}/recommended-candidates`, {
+        params,
+      })
+      .pipe(map((res) => res?.candidates ?? []));
   }
 }
