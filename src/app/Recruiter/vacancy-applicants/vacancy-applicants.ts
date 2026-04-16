@@ -12,9 +12,17 @@ import { Vacancy } from '../../models/vacancy.model';
 import { CvExtractionService } from '../../services/cv-extraction.service';
 import { InterviewService } from '../../services/interview.service';
 import { InterviewUpsert } from '../../services/interview.service';
+import { ProfileService } from '../../services/profile.service';
+import { EmailService } from '../../services/email.service';
+import { RecruiterService } from '../../services/recruiter.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, forkJoin, map, of, switchMap, tap, EMPTY } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
+
+interface EmailResult {
+  emailSent: boolean;
+  warning?: string;
+}
 
 @Component({
   selector: 'app-vacancy-applicants',
@@ -55,6 +63,9 @@ export class VacancyApplicants implements OnInit {
   private readonly authSession = inject(AuthSessionService);
   private readonly cvService = inject(CvExtractionService);
   private readonly interviewService = inject(InterviewService);
+  private readonly profileService = inject(ProfileService);
+  private readonly emailService = inject(EmailService);
+  private readonly recruiterService = inject(RecruiterService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -249,13 +260,51 @@ export class VacancyApplicants implements OnInit {
     this.interviewError = null;
 
     this.interviewService.createInterview(this.interviewForm).pipe(
+      switchMap(() => {
+        const loggedInUser = this.authSession.getLoggedInUser();
+        const userId = this.authSession.getUserId(loggedInUser);
+        if (!userId) {
+          return of({ emailSent: false, warning: 'Could not identify recruiter.' });
+        }
+
+        return this.companyStore.getCompanyForUser(userId).pipe(
+          switchMap((company) => {
+            return this.recruiterService.findRecruiterByEmail(userId).pipe(
+              switchMap((recruiter) => {
+                const recruiterProfile = this.authSession.getAccountProfile(loggedInUser);
+                const recruiterName = recruiterProfile?.name || 'Recruiter';
+                const recruiterRole = recruiter?.role || '';
+
+                return this.profileService.getProfileById(this.selectedApplicant!.candidateId).pipe(
+                  switchMap((profile) =>
+                    this.emailService.sendEmail({
+                      email: profile.email,
+                      subject: `Interview Scheduled: ${this.interviewForm.position}${company ? ` at ${company.name}` : ''}`,
+                      body: this.buildInterviewNotificationBody(this.interviewForm, company?.name, recruiterName, recruiterRole),
+                    }).pipe(
+                      map(() => ({ emailSent: true })),
+                      catchError(() => of({ emailSent: false, warning: 'Failed to send notification email.' })),
+                    ),
+                  ),
+                  catchError(() => of({ emailSent: false, warning: 'Could not load candidate email address.' })),
+                );
+              }),
+              catchError(() => of({ emailSent: false, warning: 'Could not load recruiter information.' })),
+            );
+          }),
+          catchError(() => of({ emailSent: false, warning: 'Could not load company information.' })),
+        );
+      }),
       finalize(() => {
         this.scheduling = false;
         this.triggerViewUpdate();
       }),
     ).subscribe({
-      next: () => {
+      next: (result: EmailResult) => {
         this.interviewSuccess = 'Interview scheduled successfully.';
+        if (!result.emailSent) {
+          this.interviewSuccess += ' ' + (result.warning ?? 'Notification email was not sent.');
+        }
         this.openModal('interviewSuccessModal');
         this.closeModal('scheduleInterviewModal');
       },
@@ -263,6 +312,41 @@ export class VacancyApplicants implements OnInit {
         this.interviewError = 'Failed to schedule interview.';
       },
     });
+  }
+
+  private buildInterviewNotificationBody(interview: InterviewUpsert, companyName?: string, recruiterName?: string, recruiterRole?: string): string {
+    const lines: string[] = [
+      `Hello ${interview.candidateName},`,
+      '',
+      `Your interview for the position of ${interview.position}${companyName ? ` at ${companyName}` : ''} has been scheduled.`,
+      `Date: ${interview.date}`,
+      `Time: ${interview.time}`,
+      `Type: ${interview.type}`,
+    ];
+
+    if (interview.type === 'Virtual' && interview.meetingLink) {
+      lines.push(`Meeting Link: ${interview.meetingLink}`);
+    }
+
+    if (interview.type === 'In-person' && interview.location) {
+      lines.push(`Location: ${interview.location}`);
+    }
+
+    if (interview.notes) {
+      lines.push(`Notes: ${interview.notes}`);
+    }
+
+    lines.push('', 'Please make sure to join on time and contact us if you need to reschedule.');
+    if (recruiterName) {
+      lines.push('', `Regards,`);
+      if (recruiterRole) {
+        lines.push(`${recruiterName} (${recruiterRole})`);
+      } else {
+        lines.push(recruiterName);
+      }
+    }
+
+    return lines.join('\n');
   }
 
   private openModal(id: string): void {
