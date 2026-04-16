@@ -63,10 +63,26 @@
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
                     <label class="form-label small text-muted">Select vacancy</label>
-                    <select class="form-select" [(ngModel)]="selectedVacancyId" (ngModelChange)="onVacancySelectionChange()">
-                        <option [ngValue]="null">All vacancies</option>
-                        <option *ngFor="let v of vacancies" [ngValue]="v.id">{{ v.title }}</option>
-                    </select>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-md">
+                            <select class="form-select" [(ngModel)]="selectedVacancyId"
+                                (ngModelChange)="onVacancySelectionChange()">
+                                <option [ngValue]="null">All vacancies</option>
+                                <option *ngFor="let v of vacancies" [ngValue]="v.id">{{ v.title }}</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-auto">
+                            <button type="button" class="btn btn-primary w-100"
+                                (click)="getRecommendedCandidates()"
+                                [disabled]="selectedVacancyId == null || loading">
+                                <i class="bi bi-stars me-2"></i>
+                                Get recommended candidates
+                            </button>
+                            <div class="form-text" *ngIf="selectedVacancyId == null">
+                                Select a vacancy to enable recommendations.
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -200,6 +216,73 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommended Candidates Modal -->
+<div class="modal fade" id="recommendedCandidatesModal" tabindex="-1" aria-labelledby="recommendedCandidatesModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recommendedCandidatesModalLabel">Recommended candidates</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" *ngIf="recommendedInfo as msg">{{ msg }}</div>
+                <div class="alert alert-danger" *ngIf="recommendedError">{{ recommendedError }}</div>
+
+                <div class="text-center py-4" *ngIf="recommendedLoading">
+                    <div class="spinner-border" role="status" aria-label="Loading"></div>
+                </div>
+
+                <div class="list-group" *ngIf="!recommendedLoading && recommendedCandidates.length">
+                    <button type="button" class="list-group-item list-group-item-action"
+                        *ngFor="let c of recommendedCandidates; let i = index"
+                        (click)="toggleCandidateDetails(i)">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">{{ getCandidateDisplayName(c) }}</div>
+                                <div class="text-muted small" *ngIf="c.title">{{ c.title }}</div>
+                                <div class="text-muted small" *ngIf="c.location">{{ c.location }}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="small text-muted">Match</div>
+                                <div class="fw-bold">{{ formatMatchScore(c.matchScore) }}</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3" *ngIf="expandedCandidateIndex === i">
+                            <div class="d-flex flex-wrap gap-2 mb-2" *ngIf="c.matchedRequiredSkills?.length">
+                                <span class="badge bg-success-subtle text-success-emphasis border"
+                                    *ngFor="let s of c.matchedRequiredSkills">{{ s }}</span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mb-3" *ngIf="c.matchedOptionalSkills?.length">
+                                <span class="badge bg-primary-subtle text-primary-emphasis border"
+                                    *ngFor="let s of c.matchedOptionalSkills">{{ s }}</span>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                <a *ngIf="c.linkedinUrl" class="btn btn-sm btn-outline-primary" [href]="c.linkedinUrl"
+                                    target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()">
+                                    View LinkedIn profile
+                                </a>
+                                <span class="text-muted small" *ngIf="!c.linkedinUrl">No LinkedIn URL found.</span>
+                                <span class="text-muted small ms-auto">Click again to collapse</span>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="text-center py-5" *ngIf="!recommendedLoading && !recommendedError && !recommendedInfo && !recommendedCandidates.length">
+                    <i class="bi bi-search text-muted display-6"></i>
+                    <div class="mt-2">No recommendations yet.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

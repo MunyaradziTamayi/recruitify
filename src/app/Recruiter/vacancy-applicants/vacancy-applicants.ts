@@ -12,9 +12,7 @@ import { Vacancy } from '../../models/vacancy.model';
 import { CvExtractionService } from '../../services/cv-extraction.service';
 import { InterviewService } from '../../services/interview.service';
 import { InterviewUpsert } from '../../services/interview.service';
-import { ProfileService } from '../../services/profile.service';
-import { EmailService } from '../../services/email.service';
-import { RecruiterService } from '../../services/recruiter.service';
+import { RecommendedCandidate } from '../../services/application.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, forkJoin, map, of, switchMap, tap, EMPTY } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
@@ -35,6 +33,11 @@ export class VacancyApplicants implements OnInit {
   applications: Application[] = [];
   vacancies: Vacancy[] = [];
   selectedVacancyId: number | null = null;
+  recommendedCandidates: RecommendedCandidate[] = [];
+  recommendedLoading = false;
+  recommendedError: string | null = null;
+  recommendedInfo: string | null = null;
+  expandedCandidateIndex: number | null = null;
   selectedApplicant: Application | null = null;
   interviewForm: InterviewUpsert = {
     applicationId: 0,
@@ -380,5 +383,61 @@ export class VacancyApplicants implements OnInit {
 
   getStatusText(status: string): string {
     return status;
+  }
+
+  getRecommendedCandidates(): void {
+    this.recommendedError = null;
+    this.recommendedInfo = null;
+    this.recommendedCandidates = [];
+    this.expandedCandidateIndex = null;
+
+    if (this.selectedVacancyId == null) {
+      this.recommendedInfo = 'Select a vacancy first to get recommendations.';
+      this.openModal('recommendedCandidatesModal');
+      this.triggerViewUpdate();
+      return;
+    }
+
+    this.recommendedLoading = true;
+    this.openModal('recommendedCandidatesModal');
+    this.triggerViewUpdate();
+
+    this.applicationService
+      .getRecommendedCandidatesForVacancy(this.selectedVacancyId, { maxResults: 10, requireAllRequiredSkills: false })
+      .pipe(
+        finalize(() => {
+          this.recommendedLoading = false;
+          this.triggerViewUpdate();
+        }),
+      )
+      .subscribe({
+        next: (candidates) => {
+          this.recommendedCandidates = candidates ?? [];
+          if (!this.recommendedCandidates.length) {
+            this.recommendedInfo = 'No recommended candidates found.';
+          }
+          this.triggerViewUpdate();
+        },
+        error: (err) => {
+          console.error(err);
+          this.recommendedError =
+            'Failed to fetch recommended candidates. Make sure the backend is running and SERPAPI_API_KEY is configured.';
+          this.triggerViewUpdate();
+        },
+      });
+  }
+
+  toggleCandidateDetails(index: number): void {
+    this.expandedCandidateIndex = this.expandedCandidateIndex === index ? null : index;
+  }
+
+  getCandidateDisplayName(candidate: RecommendedCandidate): string {
+    return candidate.fullName?.trim() || candidate.title?.trim() || 'Candidate';
+  }
+
+  formatMatchScore(score: number | null | undefined): string {
+    if (score == null || !Number.isFinite(score)) return '—';
+    const pct = Math.max(0, Math.min(100, Math.round(score * 100)));
+    return `${pct}%`;
   }
 }
