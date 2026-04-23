@@ -14,7 +14,16 @@
             <h2>Welcome Back</h2>
             <p>Connect with your dream job today</p>
 
-            <div id="login_button"></div>
+            <div *ngIf="!isProcessing" id="login_button"></div>
+
+            <div *ngIf="isProcessing" class="processing-state" aria-live="polite">
+                <div class="processing-spinner" aria-hidden="true"></div>
+                <h3>Signing you in</h3>
+                <p>{{ processingMessage }}</p>
+                <p class="processing-note">Please keep this page open while we wait for the backend to respond.</p>
+            </div>
+
+            <p *ngIf="authError" class="auth-error">{{ authError }}</p>
         </div>
 
         <div class="card-footer">

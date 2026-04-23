@@ -1,6 +1,6 @@
 ﻿import { Inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { CandidateProfile, CandidateProfileRequest } from '../models/profile.model';
 import { API_BASE_URL } from '../config/api-base-url';
@@ -28,15 +28,18 @@ export class ProfileService {
     return this.http.get<CandidateProfile[]>(this.baseUrl);
   }
 
-  findProfileByEmail(email: string): Observable<CandidateProfile | null> {
+  findProfileByEmail(email: string, suppressErrors = true): Observable<CandidateProfile | null> {
     const normalized = email.trim().toLowerCase();
     if (!normalized) return of(null);
 
     const params = new HttpParams().set('email', normalized);
-    return this.http.get<CandidateProfile>(`${this.baseUrl}/search`, { params }).pipe(
-      catchError(() => of(null)),
+    const request$ = this.http.get<CandidateProfile>(`${this.baseUrl}/search`, { params }).pipe(
       map((profile) => profile ?? null),
     );
+
+    return suppressErrors
+      ? request$.pipe(catchError(() => of(null)))
+      : request$.pipe(catchError((error) => throwError(() => error)));
   }
 
   updateProfile(id: number, request: CandidateProfileRequest): Observable<CandidateProfile> {
