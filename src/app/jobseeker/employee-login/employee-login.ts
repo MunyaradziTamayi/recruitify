@@ -1,6 +1,6 @@
 declare var google: any;
 
-import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, Component, NgZone, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -14,7 +14,7 @@ import { ProfileService } from '../../services/profile.service';
   templateUrl: './employee-login.html',
   styleUrl: './employee-login.css',
 })
-export class EmployeeLogin implements OnInit, OnDestroy {
+export class EmployeeLogin implements AfterViewInit, OnDestroy {
   isProcessing = false;
   authError = '';
   processingMessage = 'Checking your account...';
@@ -28,7 +28,7 @@ export class EmployeeLogin implements OnInit, OnDestroy {
     private ngZone: NgZone,
   ) {}
 
-  ngOnInit(): void {
+  ngAfterViewInit(): void {
     this.tryInitGoogle();
   }
 
@@ -53,7 +53,7 @@ export class EmployeeLogin implements OnInit, OnDestroy {
     }
 
     google.accounts.id.initialize({
-      client_id: '146794311153-fok9cje9nm7c8q1m3aie85i8s2u3rp5b.apps.googleusercontent.com',
+      client_id: '638799417414-qfeagrobmsi3utlr7b9m55ljt6o27q8l.apps.googleusercontent.com',
       callback: (resp: any) => {
         this.ngZone.run(() => this.handleLogin(resp));
       }
@@ -61,6 +61,7 @@ export class EmployeeLogin implements OnInit, OnDestroy {
 
     const buttonEl = document.getElementById('login_button');
     if (buttonEl) {
+      buttonEl.innerHTML = '';
       google.accounts.id.renderButton(buttonEl, {
         color: 'filled_blue',
         size: 'large',
